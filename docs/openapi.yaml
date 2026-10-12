@@ -1,0 +1,673 @@
+openapi: 3.0.3
+info:
+  title: ZumaBrain API
+  version: 0.1.0
+  description: |
+    Backend de ZumaBrain — juego móvil híbrido de aprendizaje con temática maya.
+    Roles: alumno (student) y profesor (teacher). Progresión por nodos en el
+    Sendero Sagrado, minijuegos, líderes y enciclopedia (Códice).
+  license:
+    name: Propietario
+servers:
+  - url: https://api.zumabrain.app/v1
+    description: Producción
+  - url: http://localhost:8080/v1
+    description: Desarrollo local
+
+tags:
+  - name: Auth
+    description: Registro, login y renovación de sesión
+  - name: Users
+    description: Perfil del usuario autenticado
+  - name: Classrooms
+    description: Aulas/grupos gestionados por el profesor
+  - name: Sendero
+    description: Secciones y nodos del Sendero Sagrado
+  - name: Progress
+    description: Progreso del alumno en el sendero
+  - name: Leaderboard
+    description: Tablas de clasificación
+  - name: Codex
+    description: Enciclopedia temática (Códice)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─────────────────────────── AUTH ───────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registro de usuario (alumno o profesor)
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario creado; devuelve token y perfil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Inicio de sesión con correo y contraseña
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renueva el access token con el refresh token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Nuevo access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # ─────────────────────────── USERS ───────────────────────────
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Perfil del usuario autenticado
+      operationId: getMe
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users]
+      summary: Actualiza apodo u otros datos del perfil
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                  example: BALAM
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ─────────────────────────── CLASSROOMS ───────────────────────────
+  /classrooms:
+    post:
+      tags: [Classrooms]
+      summary: El profesor crea un aula (genera código)
+      operationId: createClassroom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: 4° A — Matemáticas Mayas
+                sectionIds:
+                  type: array
+                  items:
+                    type: string
+                  description: Secciones del sendero asignadas al aula
+      responses:
+        '201':
+          description: Aula creada (incluye código de aula maya)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    get:
+      tags: [Classrooms]
+      summary: Aulas del profesor (o aulas del alumno)
+      operationId: listMyClassrooms
+      responses:
+        '200':
+          description: Lista de aulas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classroom'
+
+  /classrooms/{id}:
+    get:
+      tags: [Classrooms]
+      summary: Detalle de un aula
+      operationId: getClassroom
+      parameters:
+        - $ref: '#/components/parameters/ClassroomId'
+      responses:
+        '200':
+          description: Aula
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /classrooms/join:
+    post:
+      tags: [Classrooms]
+      summary: El alumno se une a un aula con su código
+      operationId: joinClassroom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  example: KUKUL-04
+      responses:
+        '200':
+          description: Unido al aula
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /classrooms/{id}/students:
+    get:
+      tags: [Classrooms]
+      summary: Lista de alumnos del aula con resumen de progreso
+      operationId: listClassroomStudents
+      parameters:
+        - $ref: '#/components/parameters/ClassroomId'
+      responses:
+        '200':
+          description: Alumnos con progreso agregado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentSummary'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────── SENDERO ───────────────────────────
+  /sections:
+    get:
+      tags: [Sendero]
+      summary: Secciones del Sendero Sagrado
+      operationId: listSections
+      responses:
+        '200':
+          description: Secciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Section'
+
+  /sections/{sectionId}/nodes:
+    get:
+      tags: [Sendero]
+      summary: Nodos de una sección (con estado para el usuario autenticado)
+      operationId: listSectionNodes
+      parameters:
+        - $ref: '#/components/parameters/SectionId'
+      responses:
+        '200':
+          description: Nodos ordenados por el camino
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Node'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─────────────────────────── PROGRESS ───────────────────────────
+  /me/progress:
+    get:
+      tags: [Progress]
+      summary: Progreso completo del alumno autenticado
+      operationId: getMyProgress
+      responses:
+        '200':
+          description: Progreso y acumuladores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressSummary'
+
+  /me/progress/{nodeId}:
+    put:
+      tags: [Progress]
+      summary: Registra el resultado de un nodo (al terminar la partida)
+      operationId: updateNodeProgress
+      parameters:
+        - $ref: '#/components/parameters/NodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stars, jadeCoins]
+              properties:
+                stars:
+                  type: integer
+                  minimum: 0
+                  maximum: 3
+                  description: Sellos solares obtenidos
+                jadeCoins:
+                  type: integer
+                  minimum: 0
+                  description: Cuentas de jade ganadas
+      responses:
+        '200':
+          description: Progreso actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgressSummary'
+        '409':
+          $ref: '#/components/responses/Conflict'
+          description: Mejores resultados ya registrados o nodo bloqueado
+
+  # ─────────────────────────── LEADERBOARD ───────────────────────────
+  /leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Ranking global o de un aula
+      operationId: getLeaderboard
+      parameters:
+        - name: classroomId
+          in: query
+          schema:
+            type: string
+          description: Si se omite, devuelve el ranking global
+      responses:
+        '200':
+          description: Entradas del ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+
+  # ─────────────────────────── CÓDICE ───────────────────────────
+  /codex/entries:
+    get:
+      tags: [Codex]
+      summary: Entradas de la enciclopedia (glifos, conceptos)
+      operationId: listCodexEntries
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+          description: Búsqueda por texto
+        - name: topic
+          in: query
+          schema:
+            type: string
+            enum: [aritmetica, geometria, calendario, glifos, historia]
+      responses:
+        '200':
+          description: Entradas del Códice
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodexEntry'
+
+  /codex/entries/{entryId}:
+    get:
+      tags: [Codex]
+      summary: Detalle de una entrada (con contenido largo)
+      operationId: getCodexEntry
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: Entrada completa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodexEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ClassroomId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    SectionId:
+      name: sectionId
+      in: path
+      required: true
+      schema:
+        type: string
+    NodeId:
+      name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: El rol no permite la operación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflicto de estado (p.ej. nodo bloqueado)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: NODE_LOCKED
+        message:
+          type: string
+
+    Role:
+      type: string
+      enum: [student, teacher]
+
+    User:
+      type: object
+      required: [id, email, nickname, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        nickname:
+          type: string
+          example: BALAM
+        role:
+          $ref: '#/components/schemas/Role'
+
+    RegisterRequest:
+      type: object
+      required: [email, password, nickname, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        nickname:
+          type: string
+          example: BALAM
+        role:
+          $ref: '#/components/schemas/Role'
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: BALAM@gmail.com
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      required: [accessToken, refreshToken, user]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    Classroom:
+      type: object
+      required: [id, code, name, teacherId]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          example: KUKUL-04
+        name:
+          type: string
+        teacherId:
+          type: string
+        sectionIds:
+          type: array
+          items:
+            type: string
+        studentCount:
+          type: integer
+
+    StudentSummary:
+      type: object
+      required: [user, jadeCoins, totalStars, nodesCompleted]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        jadeCoins:
+          type: integer
+        totalStars:
+          type: integer
+        nodesCompleted:
+          type: integer
+
+    Section:
+      type: object
+      required: [id, name, order]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Sendero del Alba
+        order:
+          type: integer
+
+    NodeStatus:
+      type: string
+      enum: [locked, active, completed]
+
+    Node:
+      type: object
+      required: [id, sectionId, order, title, status]
+      properties:
+        id:
+          type: string
+        sectionId:
+          type: string
+        order:
+          type: integer
+        title:
+          type: string
+          example: TEMPLO DE LOS GLIFOS
+        subtitle:
+          type: string
+          example: Desafío de agilidad y descifrado vigesimal en 60s.
+        rewardLabel:
+          type: string
+          example: Glifo Dorado de la Sabiduría Vigesimal
+        status:
+          $ref: '#/components/schemas/NodeStatus'
+        stars:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Sellos solares ya obtenidos (si completado)
+        requiredForUnlock:
+          type: string
+          description: Requisito de desbloqueo legible p.ej. "Vencer al Guardián de Glifos"
+
+    ProgressSummary:
+      type: object
+      required: [jadeCoins, totalStars, nodeProgress]
+      properties:
+        jadeCoins:
+          type: integer
+        totalStars:
+          type: integer
+        nodeProgress:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeProgress'
+        lastPlayedAt:
+          type: string
+          format: date-time
+
+    NodeProgress:
+      type: object
+      required: [nodeId, stars, completedAt]
+      properties:
+        nodeId:
+          type: string
+        stars:
+          type: integer
+          minimum: 0
+          maximum: 3
+        jadeCoins:
+          type: integer
+        completedAt:
+          type: string
+          format: date-time
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, nickname, jadeCoins, totalStars]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        nickname:
+          type: string
+          example: BALAM
+        jadeCoins:
+          type: integer
+        totalStars:
+          type: integer
+
+    CodexEntry:
+      type: object
+      required: [id, title, topic, summary]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          example: Rueda Tzolkin
+        topic:
+          type: string
+          enum: [aritmetica, geometria, calendario, glifos, historia]
+        summary:
+          type: string
+        content:
+          type: string
+          description: Contenido largo (presente solo en detalle)
+        unlocked:
+          type: boolean
+          description: true si el alumno desbloqueó la entrada
