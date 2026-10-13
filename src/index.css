@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-obsidian: #141414;
+    --color-stone: #1f1f1f;
+    --color-clay: #a62b2b;
+    --color-jade: #22c55e;
+    --color-solar: #d99b26;
+  }
+}
+
+.font-press-start {
+  font-family: 'Press Start 2P', monospace;
+}
+
+.font-silkscreen {
+  font-family: 'Silkscreen', monospace;
+}
+
+/* Retro pixelated shadows and borders */
+.retro-border {
+  box-shadow: inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),
+              inset 2px 2px 0px 0px rgba(255, 255, 255, 0.2);
+}
+
+.retro-button {
+  box-shadow: inset -3px -3px 0px 0px rgba(0, 0, 0, 0.5),
+              inset 3px 3px 0px 0px rgba(255, 255, 255, 0.3),
+              0 4px 0 0 rgba(0, 0, 0, 0.7);
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+}
+
+.retro-button:active {
+  transform: translateY(3px);
+  box-shadow: inset -1px -1px 0px 0px rgba(0, 0, 0, 0.5),
+              inset 1px 1px 0px 0px rgba(255, 255, 255, 0.3),
+              0 1px 0 0 rgba(0, 0, 0, 0.7);
+}
+
+.pixel-art {
+  image-rendering: pixelated;
+}

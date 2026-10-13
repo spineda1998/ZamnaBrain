@@ -1,0 +1,7 @@
+{
+  "name": "ZumaBrain",
+  "description": "Juego educativo mesoamericano de agilidad mental, matemáticas mayas y progresión ritual",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
