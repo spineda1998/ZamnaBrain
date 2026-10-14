@@ -1,6 +1,6 @@
 {
-  "summary": "Plan de implementación detallado para rehidratar la pantalla de Feed de acuerdo con el diseño de referencia pixel-art mesoamericano e incorporar dos minijuegos completos y jugables: Tetris Maya y Memorama numérico vigesimal.",
-  "updatedAt": "2026-10-12T23:44:56.204623864Z",
+  "summary": "Plan de implementación detallado para el nuevo componente CosmicBackground.tsx con shader WebGL (azul maya, destellos jade, negro abisal y dithering ordenado Bayer), integración en Login y Feed (atenuado para contraste y legibilidad), y sincronización de la mascota ceremonial y el spinner sutil.",
+  "updatedAt": "2026-10-14T20:02:25.575249974Z",
   "requestFeedback": true,
   "userFacing": true
 }

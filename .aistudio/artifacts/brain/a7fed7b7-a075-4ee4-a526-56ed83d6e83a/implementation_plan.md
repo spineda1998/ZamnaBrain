@@ -1,122 +1,55 @@
-# Plan de Implementación: Re-hidratación de Feed & Minijuegos Tetris Maya y Memorama
+# Plan de Implementación: CosmicBackground Shader WebGL, Integración en Login/Feed y Mascota Ceremonial
 
-Transformación y re-hidratación integral de la pantalla principal **Feed** con fidelidad pixel-art exacta a la imagen de referencia mesoamericana, junto con el desarrollo de dos nuevos minijuegos arcade completos e interactivos: **Tetris Maya** (bloques de piedra y retos numéricos) y **Memorama Maya** (emparejamiento de glifos vigesimales con números arábigos), integrados en la navegación y en los desafíos diarios.
-
----
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> Decisiones confirmadas a partir de las preferencias del usuario:
-> - **Mecánica de Tetris Maya**: Tetris clásico arcade con bloques tallados de piedra maya (estelas, glifos tallados) y retos de bonificación numérica maya al limpiar múltiples líneas.
-> - **Enfoque educativo de Memorama Maya**: Emparejamiento de cartas de glifos numéricos vigesimales (puntos, barras y caracoles/semillas 0–19) con sus equivalentes en números arábigos decimales.
-> - **Puntos de acceso**: Ambos minijuegos estarán disponibles tanto en la pestaña dedicada de **Minijuegos** (con selector de modo Zuma / Tetris / Memorama) como activables directamente desde las tarjetas interactivas de **Desafíos Diarios** en la pantalla de **Feed**.
+Este plan describe la arquitectura y modificaciones necesarias para implementar el nuevo componente `CosmicBackground.tsx`, configurar la paleta solicitada (Azul Maya profundo, destellos Jade y Negro Abisal), adaptar su presentación atenuada en el Feed, y sincronizar la mascota de referencia para la pantalla de inicio y el spinner animado.
 
 ---
 
-## 1. Overview & Core Concept
-
-- **Feed Ceremonial Re-hidratado**: Una pantalla de resumen dinámica con estética de arcade retro maya (paleta obsidiana, jade, oro solar y rojo arcilla) que muestra:
-  - Barra superior con saldo de Cacaos/Monedas (`⊚ 2,450`), Gemas de Jade/Diamantes (`💎 180`) y estado `ACTIVO`.
-  - Tarjeta de expedición principal: **Senda Sagrada (Mundo 2: Selvas de Palenque)** con barra de progreso pixel art (`🚩 68% AVANCE`), preludio del próximo reto (*Templo de los Glifos Vigesimales*, costo `-15 ENERGÍA`) y botón de acción directa `CONTINUAR SENDA →`.
-  - Panel de **Actividad Reciente** con historial de partidas, estrellas ganadas y racha activa de 7 días con bonificación solar.
-  - Panel de **Desafíos Diarios** con temporizador en tiempo real (`RELOJ 08:42:15`), misiones interactivas (*Cálculo de Mazorcas*, *Reflejo Serpiente Zuma*, *Glifos Sonoros*) con botones ejecutables (`JUGAR`, `ENTRAR`, `ESTUDIAR`).
-  - Barra inferior de cabina arcade (`🎮 CABINA: ITZAMNA #042 · ● CRÉDITO 1P DISPONIBLE`).
-- **Tetris Maya**: Minijuego en Canvas/React con gravedad, rotación, caída rápida, tablero 10×20 de piedra maya, piezas talladas en piedra caliza con glifos incrustados, efectos de sonido sintetizados por Web Audio API y multiplicadores por combos de líneas vigesimales.
-- **Memorama Maya**: Minijuego de memoria con tablero de cartas reversibles talladas en jade y arcilla, donde el jugador voltea cartas para emparejar glifos numéricos mayas (concha=0, puntos=1, barras=5) con sus valores arábigos (0 al 19), con medidor de turnos, racha de aciertos y tiempo.
-
----
-
-## 2. User Experience & Visual Design
-
-### Estética y Dirección Visual
-- **Fidelidad al mock**: Marco de máquina recreativa mesoamericana con grecas rojas/doradas en bordes, tipografía dual `Press Start 2P` (títulos y métricas numéricas) y `Silkscreen` (subtítulos, descripciones y micro-etiquetas).
-- **Paleta de Colores**:
-  - Fondo cantera/obsidiana: `#141414` y `#1a1a1a`
-  - Contenedores de arcilla y madera oscura: `#221c17`, `#261f1a`, `#2a2018`
-  - Acentos de Oro Solar: `#d99b26`, `#fbbf24`, `#f59e0b`
-  - Verde Jade de Bonificación: `#22c55e`, `#10b981`, `#15803d`
-  - Rojo Templo Ceremonial: `#a62b2b`, `#881337`, `#7f1d1d`
-  - Turquesa Cenote: `#06b6d4`, `#0891b2`
-- **Componentes Pixel Art**:
-  - Gráficos de textura cuadriculada para la ilustración de *Selvas de Palenque*.
-  - Iconos pixelados dedicados para Balanza de Jade (⚖️), Medalla de Nodo (🎖️), Racha de Fuego (🔥), Cuadrícula de Mazorcas (⊞), Serpiente de Zuma (∞) y Oreja/Glifo Sonoro (👂).
-  - Botones retro con borde biselado e interactividad de presión física (sombra desplazada al hacer click).
-
-### Flujo de Navegación
-1. **Feed (Pestaña Inicial)**: El jugador visualiza su estado general, racha y próximos retos. Al presionar `CONTINUAR SENDA →`, salta directamente a la aventura en Sendero Sagrado. Al presionar `JUGAR` en los Desafíos Diarios, lanza Tetris Maya, Zuma o Memorama.
-2. **Selector de Minijuegos (Pestaña Minijuegos)**: Vista arcade estilo cabina con 3 gabinetes seleccionables:
-   - *Zuma Serpiente Sagrada* (modo existente enriquecido).
-   - *Tetris Maya* (bloques de piedra ancestrales).
-   - *Memorama Vigesimal* (emparejamiento de glifos y números).
-3. **Mecánica de Retorno y Recompensas**: Al terminar cualquier minijuego, se calculan estrellas y Cacaos/Jade, se muestra pantalla de victoria/derrota con confeti y se actualizan los contadores en tiempo real.
+## 1. Nuevo Componente: `src/components/CosmicBackground.tsx`
+- **Tecnología**: WebGL Fragment Shader nativo sobre elemento `<canvas>` con fallback a Canvas 2D idéntico.
+- **Renderizado Pixel Art & Dithering Ordenado**:
+  - Cuantización espacial nítida (`imageRendering: 'pixelated'`, tamaño de pixel virtual retro ajustable).
+  - Algoritmo de Dithering Ordenado mediante matriz Bayer 4x4 / 8x8 normalizada y calibrada para transiciones suaves de estilo retro 16-bit.
+- **Paleta Ceremonial Seleccionada**:
+  - **Negro Abisal de fondo**: `#020408`, `#05080f`, `#09111e`.
+  - **Azul Maya Profundo (Brazos espirales y nebulosa central)**: `#0d2744`, `#13406b`, `#1d659e`, `#29b6f6`.
+  - **Destellos de Jade Cósmico**: `#064e3b`, `#059669`, `#10b981`, `#34d399`.
+  - **Centellas estelares**: Puntos dorados y menta (`#fabc4c`, `#a7f3d0`) simulando constelaciones mayas (*Tzab-ek*).
+- **Parámetros configurables (`CosmicBackgroundProps`)**:
+  - `variant: 'login' | 'feed' | 'subtle'`:
+    - En `'login'`: intensidad completa y contraste vibrante detrás de la tablilla de arcilla.
+    - En `'feed'`: renderizado oscurecido y atenuado (baja saturación/brillo) con superposición oscura semitransparente para preservar la máxima legibilidad de los textos y retos semanales.
+  - `speed`: factor de velocidad de rotación cósmica (por defecto 0.8–1.0).
+  - `interactive`: perturbación reactiva al cursor/tacto en coordenadas UV.
+  - `dimmed`: flag para atenuación rápida adicional.
 
 ---
 
-## 3. Key Product Decisions & Trade-Offs
-
-- **Canvas 2D para Tetris Maya vs. DOM Grid**: Se empleará Canvas HTML5 nativo para el tablero de Tetris para garantizar una tasa de refresco constante a 60 FPS, detección precisa de colisiones, rotación fluida y renderizado de texturas de bloques de piedra sin sobrecargar el árbol DOM de React.
-- **Card Flip CSS 3D para Memorama**: Se implementará con CSS `transform: rotateY(180deg)` y `backface-visibility: hidden` sobre componentes React, logrando una animación de volteo de tarjeta táctil y suave sin librerías externas pesadas.
-- **Persistencia de Desafíos y Monedas en Memoria/API**: Las monedas y energía mostradas en el Feed se sincronizan con el backend REST (`/v1/me/progress`), manteniendo consistencia entre las partidas de los distintos modos de juego.
-
----
-
-## 4. Technical Architecture & Data Strategy
-
-### Diagrama de Arquitectura de Componentes
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                               App.tsx                                  │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                Header.tsx (Stats: Cacaos, Jade, Nick)            │  │
-│  └──────────────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                 Barra de Navegación (Tabs)                       │  │
-│  │  [ Feed ] · [ Sendero ] · [ Minijuegos ] · [ Códice ] · [ Leader]│  │
-│  └──────────────────────────────────────────────────────────────────┘  │
-│                                  │                                     │
-│      ┌───────────────────────────┼───────────────────────────┐         │
-│      ▼                           ▼                           ▼         │
-│ ┌───────────────┐      ┌────────────────────┐      ┌────────────────┐  │
-│ │   FeedView    │      │  MinigamesArcade   │      │   SenderoMap   │  │
-│ │ (Mockup 100%  │      │  ┌──────────────┐  │      │                │  │
-│ │  fidelidad a  │      │  │ ZumaGame     │  │      └────────────────┘  │
-│ │  la imagen)   │      │  ├──────────────┤  │                          │
-│ │  - Selvas     │      │  │ MayaTetris   │  │                          │
-│ │  - Actividad  │      │  ├──────────────┤  │                          │
-│ │  - Desafíos   │      │  │ MayaMemorama │  │                          │
-│ │  - Cabina 1P  │      │  └──────────────┘  │                          │
-│ └───────────────┘      └────────────────────┘                          │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### Estructura de Nuevos Componentes
-1. `src/components/FeedView.tsx`: Réplica exacta del diseño `Inicio - Feed & Desafíos Diarios Maya.png`, con soporte de navegación a los retos diarios y a la senda.
-2. `src/components/games/MayaTetris.tsx`: Motor completo de Tetris en Canvas con 7 tetrominós tallados en piedra, cálculo de líneas, niveles de velocidad, puntuación y desafío numérico al limpiar 2+ líneas.
-3. `src/components/games/MayaMemorama.tsx`: Juego de memoria con 16 cartas (8 parejas de glifos mayas 0-19 vs número arábigo), animaciones de volteo, contador de movimientos y cronómetro.
-4. `src/components/games/MinigamesHub.tsx`: Cabina de selección arcade para alternar entre Zuma, Tetris Maya y Memorama.
+## 2. Integración en Pantalla de Login (`src/components/LoginModal.tsx`)
+- Sustituir `WakahChanGalaxy` por `CosmicBackground` en modo `variant="login"`.
+- Mantener la tablilla de arcilla roja cinabrio (`#a62b2bff`), las grecas mayas doradas y el encabezado arcade `ITZAMNA ACADEMIA` con drop-shadow 3D.
+- Posicionar la mascota ceremonial centrada sobre la tablilla con animación de flotación limpia sin auras circulares.
 
 ---
 
-## 5. Plan de Ejecución Paso a Paso
+## 3. Integración en el Feed Principal (`src/components/FeedView.tsx` y `src/App.tsx`)
+- Integrar `CosmicBackground` como capa de fondo de la aplicación en la pestaña de inicio/feed con `variant="feed"`.
+- Configurar el shader con opacidad y luminosidad reducidas, añadiendo una sutil capa de absorción de luz para que las tarjetas de retos, misiones y estadísticas de alumno mantengan un contraste AAA óptimo.
+- Asegurar que no interfiera con los eventos de scroll ni la barra de navegación inferior `BottomNav`.
 
-1. **Creación del componente FeedView**:
-   - Construir la estructura completa de tarjetas, cabecera de recursos (`⊚ 2,450`, `💎 180`), estado `ACTIVO`.
-   - Implementar el widget de *Mundo 2: Selvas de Palenque* con arte pixel de estela maya y barra de avance 68%.
-   - Implementar la sección de *Actividad Reciente* (Balanza de Jade, Nodo 03 superado, Racha de 7 días).
-   - Implementar la sección de *Desafíos Diarios* (*Cálculo de Mazorcas*, *Reflejo Serpiente Zuma*, *Glifos Sonoros*) con listeners de juego interactivos.
-   - Implementar el pie de máquina recreativa (*CABINA: ITZAMNA #042*).
-2. **Desarrollo del Minijuego Tetris Maya**:
-   - Tablero Canvas con estética de templo maya.
-   - Rotación y movimiento con teclado y botones virtuales para dispositivos táctiles.
-   - Integración de reto matemático maya de bonificación solar tras racha de líneas.
-3. **Desarrollo del Minijuego Memorama Maya**:
-   - Sistema de generación de parejas de glifos vigesimales (0 al 19) y números arábigos.
-   - Volteo de cartas con micro-interacciones, efectos de acierto y victoria con entrega de Cacaos/Jade.
-4. **Integración en App y Header**:
-   - Añadir la pestaña **Feed** como vista por defecto al iniciar sesión.
-   - Actualizar la pestaña **Minijuegos** para presentar la marquesina de selección (Zuma, Tetris, Memorama).
-   - Conectar los botones del Feed (`CONTINUAR SENDA`, `JUGAR`, `ENTRAR`, `ESTUDIAR`) para activar directamente el juego o vista correspondiente.
-5. **Verificación y Compilación**:
-   - Compilación completa (`compile_applet`) y verificación de tipos (`lint_applet`).
+---
+
+## 4. Mascota de Referencia (`DeityAxolotl.tsx`) y Spinner (`PixelArtSpinner.tsx`)
+- **Mascota Ceremonial en Login**:
+  - Ajustar la silueta y paleta del sprite pixel art sagrado según la referencia ceremonial: cerebro sagrado místico con plumas de quetzal, diadema dorada con gema de jade y expresión arcade estilizada.
+  - Garantizar fondo 100% transparente sin orbes, discos ni círculos decorativos exteriores.
+  - Mantener la animación de flotación levitante fluida mediante keyframes CSS `float`.
+- **Spinner de Carga (`PixelArtSpinner.tsx`)**:
+  - Sincronizar el sprite con la versión miniatura idéntica de la mascota ceremonial.
+  - Conservar la animación sutil de levitación y respiración de píxeles (`spinnerFloat`) tanto en el botón de combate como en los estados de transición.
+
+---
+
+## 5. Verificación y Validación
+- Compilar la aplicación mediante `compile_applet` para garantizar que no existan errores de TypeScript ni sintaxis.
+- Verificar el comportamiento responsivo del canvas en pantallas móviles y desktop.
+- Confirmar el desempeño fluido a 60 FPS del shader WebGL con degradación elegante a Canvas 2D.

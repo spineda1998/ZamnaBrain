@@ -1,33 +1,100 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Section, GameNode, ProgressSummary } from './types';
+import { User, Section, GameNode, ProgressSummary, GameSettings } from './types';
 import { api } from './api';
 import { Header } from './components/Header';
+import { BottomNav, AppTab } from './components/BottomNav';
 import { GrecaBar } from './components/GrecaBar';
 import { LoginModal } from './components/LoginModal';
+import { SettingsModal } from './components/SettingsModal';
 import { FeedView } from './components/FeedView';
 import { SenderoMap } from './components/SenderoMap';
-import { ZumaGame } from './components/ZumaGame';
 import { MayaTetris } from './components/games/MayaTetris';
 import { MayaMemorama } from './components/games/MayaMemorama';
 import { MinigamesHub } from './components/games/MinigamesHub';
 import { CodexView } from './components/CodexView';
-import { LeaderboardView } from './components/LeaderboardView';
-import { ClassroomView } from './components/ClassroomView';
 import { NodeDetailModal } from './components/NodeDetailModal';
+import { FloatingGameControl } from './components/games/FloatingGameControl';
+import { PixelArtSpinner } from './components/PixelArtSpinner';
+import { CosmicBackground } from './components/CosmicBackground';
+
+const DEFAULT_SETTINGS: GameSettings = {
+  bgm: true,
+  sfx: true,
+  volume: 80,
+  difficulty: 'sacerdote',
+  language: 'es',
+};
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [progress, setProgress] = useState<ProgressSummary | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [nodes, setNodes] = useState<Record<string, GameNode[]>>({});
-  const [activeTab, setActiveTab] = useState<'feed' | 'sendero' | 'arcade' | 'codex' | 'leaderboard' | 'classrooms'>('feed');
+  
+  // Navigation tab ('feed' by default)
+  const [activeTab, setActiveTab] = useState<AppTab>('feed');
 
-  // Modal / Game states
+  // Jade Energy (10 Points with 24-hour daily full reset)
+  const [jadeEnergy, setJadeEnergy] = useState<number>(() => {
+    const saved = localStorage.getItem('zuma_jade_energy');
+    const lastReset = localStorage.getItem('zuma_last_energy_reset');
+    const now = Date.now();
+    if (!lastReset || now - Number(lastReset) >= 24 * 60 * 60 * 1000) {
+      localStorage.setItem('zuma_jade_energy', '10');
+      localStorage.setItem('zuma_last_energy_reset', now.toString());
+      return 10;
+    }
+    return saved !== null ? Math.min(10, Math.max(0, Number(saved))) : 10;
+  });
+
+  // Level 4 completion status
+  const [level4Completed, setLevel4Completed] = useState<boolean>(() => {
+    return localStorage.getItem('zuma_level4_completed') === 'true';
+  });
+
+  // Settings & Profile Modal
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settings, setSettings] = useState<GameSettings>(() => {
+    try {
+      const saved = localStorage.getItem('zuma_settings');
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
+  });
+
+  // Energy depletion toast alert
+  const [energyAlert, setEnergyAlert] = useState<string | null>(null);
+
+  // Active game session
   const [playingNode, setPlayingNode] = useState<GameNode | null>(null);
-  const [activeMinigame, setActiveMinigame] = useState<'zuma' | 'tetris' | 'memorama' | null>(null);
+  const [activeGameType, setActiveGameType] = useState<'tetris' | 'memorama' | null>(null);
+  const [isArcadePlaying, setIsArcadePlaying] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GameNode | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
+
+  // Periodic 24h energy check
+  useEffect(() => {
+    const checkEnergyReset = () => {
+      const lastReset = localStorage.getItem('zuma_last_energy_reset');
+      const now = Date.now();
+      if (!lastReset || now - Number(lastReset) >= 24 * 60 * 60 * 1000) {
+        setJadeEnergy(10);
+        localStorage.setItem('zuma_jade_energy', '10');
+        localStorage.setItem('zuma_last_energy_reset', now.toString());
+      }
+    };
+
+    checkEnergyReset();
+    const interval = setInterval(checkEnergyReset, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Sync energy to localStorage
+  useEffect(() => {
+    localStorage.setItem('zuma_jade_energy', jadeEnergy.toString());
+  }, [jadeEnergy]);
 
   // Load app data
   const loadAppData = useCallback(async () => {
@@ -39,7 +106,6 @@ export const App: React.FC = () => {
       setProgress(prog);
       setSections(secs);
 
-      // Load nodes for each section
       const nodeMap: Record<string, GameNode[]> = {};
       for (const s of secs) {
         nodeMap[s.id] = await api.getNodes(s.id);
@@ -50,21 +116,25 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Initial user session verification
+  // Initial auth
   useEffect(() => {
     const initAuth = async () => {
       try {
         if (api.getToken()) {
           const me = await api.getCurrentUser();
-          setUser(me);
+          const savedAvatar = localStorage.getItem('zuma_user_avatar');
+          const savedNick = localStorage.getItem('zuma_user_nickname');
+          setUser({
+            ...me,
+            avatar: savedAvatar || me.avatar || '🦅',
+            nickname: savedNick || me.nickname || 'MIGUELITO',
+          });
           await loadAppData();
         } else {
-          // Default to demo login for immediate seamless boot
-          const demo = await api.login('balam@zuma.dev', 'zuma1234');
-          setUser(demo.user);
-          await loadAppData();
+          setShowLoginModal(true);
         }
       } catch {
+        api.setToken(null);
         setShowLoginModal(true);
       } finally {
         setLoadingInitial(false);
@@ -81,122 +151,258 @@ export const App: React.FC = () => {
   };
 
   const handleLoginSuccess = async (loggedUser: User) => {
-    setUser(loggedUser);
+    const savedAvatar = localStorage.getItem('zuma_user_avatar');
+    const savedNick = localStorage.getItem('zuma_user_nickname');
+    setUser({
+      ...loggedUser,
+      avatar: savedAvatar || loggedUser.avatar || '🦅',
+      nickname: savedNick || loggedUser.nickname || 'MIGUELITO',
+    });
     setShowLoginModal(false);
+    setActiveTab('feed');
     await loadAppData();
   };
 
-  // Node Clicked on Map
+  // Save Settings & Profile
+  const handleSaveSettings = (updatedUser: Partial<User>, newSettings: GameSettings) => {
+    if (user) {
+      const mergedUser: User = {
+        ...user,
+        ...updatedUser,
+      };
+      setUser(mergedUser);
+      if (updatedUser.nickname) {
+        localStorage.setItem('zuma_user_nickname', updatedUser.nickname);
+      }
+      if (updatedUser.avatar) {
+        localStorage.setItem('zuma_user_avatar', updatedUser.avatar);
+      }
+    }
+    setSettings(newSettings);
+    localStorage.setItem('zuma_settings', JSON.stringify(newSettings));
+  };
+
+  // Node Selected on Sendero Map
   const handleSelectNode = (node: GameNode) => {
     setSelectedNode(node);
   };
 
-  const handleStartGameFromModal = (node: GameNode) => {
+  // Play Level from Sendero Map (5 Levels)
+  const handlePlayLevel = (levelNumber: number, title: string, gameType: 'tetris' | 'memorama') => {
+    const energyCost = levelNumber === 4 ? 2 : levelNumber === 5 ? 3 : 1;
+    if (jadeEnergy < energyCost) {
+      setEnergyAlert(`¡Energía de Jade insuficiente (${jadeEnergy}/10)! Necesitas ${energyCost} pts. Se recarga en 24h.`);
+      setTimeout(() => setEnergyAlert(null), 4000);
+      return;
+    }
+
+    // Deduct Jade energy points
+    setJadeEnergy((prev) => Math.max(0, prev - energyCost));
+
+    // Construct playing node
+    const syntheticNode: GameNode = {
+      id: `level-${levelNumber}`,
+      sectionId: 'sec-palenque',
+      order: levelNumber,
+      title: title,
+      isBoss: levelNumber === 5,
+      status: 'active',
+      stars: 0,
+      jadeCoins: 50,
+    };
+
+    setPlayingNode(syntheticNode);
+    setActiveGameType(gameType);
+  };
+
+  // Select Game from Node Chooser Modal
+  const handleSelectGameForNode = (node: GameNode, game: 'tetris' | 'memorama') => {
+    if (jadeEnergy < 1) {
+      setEnergyAlert('¡Energía de Jade agotada (0/10)! Espera a la recarga diaria de 24 horas.');
+      setTimeout(() => setEnergyAlert(null), 4000);
+      return;
+    }
+    setJadeEnergy((prev) => Math.max(0, prev - 1));
     setSelectedNode(null);
     setPlayingNode(node);
-    setActiveMinigame('zuma');
+    setActiveGameType(game);
+  };
+
+  // On Victory in a Level or Node
+  const handleNodeVictory = async (stars: number, coins: number) => {
+    if (playingNode) {
+      if (playingNode.id === 'level-4') {
+        setLevel4Completed(true);
+        localStorage.setItem('zuma_level4_completed', 'true');
+      }
+      try {
+        await api.updateProgress(playingNode.id, stars, coins);
+        await loadAppData();
+      } catch (err) {
+        console.error('Error guardando progreso del nodo:', err);
+      }
+    }
   };
 
   if (loadingInitial) {
     return (
-      <div className="min-h-screen bg-[#141414] flex flex-col items-center justify-center font-press-start text-xs text-[#d99b26] space-y-4">
-        <div className="text-4xl animate-bounce">🐸</div>
-        <div>CONSULTANDO EL CÓDICE SAGRADO...</div>
+      <div className="relative min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 overflow-hidden">
+        <CosmicBackground speed={0.8} dimmed={true} interactive={false} />
+        <PixelArtSpinner size="lg" message="CONSULTANDO EL CÓDICE SAGRADO..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#141414] text-[#f4efe6] flex flex-col justify-between selection:bg-[#d99b26] selection:text-black">
+    <div className="relative min-h-screen bg-[#0f141c] text-[#f4efe6] flex flex-col justify-between selection:bg-[#d99b26] selection:text-black">
+      {/* Cosmic background with ordered dithering & deep Mayan blue (dimmed for feed content readability) */}
+      {user && activeTab === 'feed' && !activeGameType && !isArcadePlaying && (
+        <CosmicBackground speed={0.65} dimmed={true} interactive={true} />
+      )}
+
       {/* Top Mesoamerican Greca border */}
       <GrecaBar />
 
-      {/* Main Application Container */}
+      {/* Main Container */}
       <div className="flex-1 flex flex-col">
-        {user && (
+        {/* Header: visible ONLY on Feed tab and when not in a game session */}
+        {user && activeTab === 'feed' && !activeGameType && !isArcadePlaying && (
           <Header
             user={user}
             progress={progress}
-            activeTab={activeTab}
-            setActiveTab={(tab) => {
-              setActiveTab(tab);
-              setPlayingNode(null);
-              setActiveMinigame(null);
-            }}
+            jadeEnergy={jadeEnergy}
+            language={settings.language}
             onLogout={handleLogout}
+            onOpenSettings={() => setShowSettingsModal(true)}
+            onGoToFeed={() => {
+              setActiveTab('feed');
+              setPlayingNode(null);
+              setActiveGameType(null);
+            }}
           />
         )}
 
-        <main className="flex-1 pb-10">
-          {/* Active Minigame Overlay (if triggered from Feed or Map) */}
-          {activeMinigame === 'zuma' ? (
-            <ZumaGame
-              node={playingNode}
-              onClose={() => {
-                setPlayingNode(null);
-                setActiveMinigame(null);
-                loadAppData();
-              }}
-              onProgressUpdated={loadAppData}
-            />
-          ) : activeMinigame === 'tetris' ? (
-            <MayaTetris
-              onClose={() => {
-                setActiveMinigame(null);
-                loadAppData();
-              }}
-            />
-          ) : activeMinigame === 'memorama' ? (
-            <MayaMemorama
-              onClose={() => {
-                setActiveMinigame(null);
-                loadAppData();
-              }}
-            />
-          ) : activeTab === 'feed' && user ? (
+        {/* Depleted Energy Banner Toast */}
+        {energyAlert && (
+          <div className="w-full max-w-[390px] mx-auto px-2 pt-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="bg-[#a62b2b] text-[#ffdad7] font-press-start text-[8.5px]/[13px] p-2.5 rounded-[2px] border-2 border-[#ffb3ad] [box-shadow:inset_1px_1px_0px_#ffffff33,_0px_4px_10px_rgba(0,0,0,0.8)] flex items-center justify-between">
+              <span>{energyAlert}</span>
+              <button
+                onClick={() => setEnergyAlert(null)}
+                className="ml-2 text-[#ffdeac] font-bold text-xs hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1">
+          {/* Active Minigame (from Node Challenge or Sendero Map launch) in Fullscreen */}
+          {activeGameType && (
+            <div className="fixed inset-0 z-50 w-screen h-screen bg-[#141414] overflow-y-auto overflow-x-hidden flex flex-col justify-start items-center">
+              <FloatingGameControl
+                onExit={() => {
+                  setPlayingNode(null);
+                  setActiveGameType(null);
+                  loadAppData();
+                }}
+                onRestart={() => {
+                  const currentType = activeGameType;
+                  setActiveGameType(null);
+                  setTimeout(() => setActiveGameType(currentType), 50);
+                }}
+                gameTitle={playingNode?.title || (activeGameType === 'tetris' ? 'TETRIS AZTECA' : 'MÁSCARAS GEMELAS')}
+                language={settings.language}
+              />
+              {activeGameType === 'tetris' ? (
+                <MayaTetris
+                  node={playingNode}
+                  onClose={() => {
+                    setPlayingNode(null);
+                    setActiveGameType(null);
+                    loadAppData();
+                  }}
+                  onVictory={handleNodeVictory}
+                />
+              ) : (
+                <MayaMemorama
+                  node={playingNode}
+                  onClose={() => {
+                    setPlayingNode(null);
+                    setActiveGameType(null);
+                    loadAppData();
+                  }}
+                  onVictory={handleNodeVictory}
+                />
+              )}
+            </div>
+          )}
+
+          {activeTab === 'feed' && user ? (
             <FeedView
               user={user}
               progress={progress}
-              onContinueSenda={() => setActiveTab('sendero')}
-              onPlayTetris={() => setActiveMinigame('tetris')}
-              onPlayZuma={() => setActiveMinigame('zuma')}
-              onPlayMemorama={() => setActiveMinigame('memorama')}
+              language={settings.language}
+              onOpenSendero={() => setActiveTab('sendero')}
+              onOpenMinigames={() => setActiveTab('arcade')}
               onOpenCodex={() => setActiveTab('codex')}
             />
           ) : activeTab === 'sendero' ? (
             <SenderoMap
-              sections={sections}
-              nodes={nodes}
-              onSelectNode={handleSelectNode}
+              jadeEnergy={jadeEnergy}
+              level4Completed={level4Completed}
+              onPlayLevel={handlePlayLevel}
+              onBackToFeed={() => setActiveTab('feed')}
             />
           ) : activeTab === 'arcade' ? (
             <MinigamesHub
-              onBackToSendero={() => setActiveTab('sendero')}
+              onBackToFeed={() => setActiveTab('feed')}
+              onGameActiveChange={setIsArcadePlaying}
+              onRewardCoins={() => loadAppData()}
+              language={settings.language}
             />
           ) : activeTab === 'codex' ? (
-            <CodexView />
-          ) : activeTab === 'leaderboard' ? (
-            user && <LeaderboardView currentUser={user} />
-          ) : activeTab === 'classrooms' ? (
-            user && <ClassroomView user={user} />
+            <CodexView onBackToFeed={() => setActiveTab('feed')} />
           ) : null}
         </main>
       </div>
 
-      {/* Node Detail Modal */}
+      {/* Settings & Profile Modal */}
+      {showSettingsModal && user && (
+        <SettingsModal
+          user={user}
+          settings={settings}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+
+      {/* Node Detail & Minigame Chooser Modal */}
       {selectedNode && (
         <NodeDetailModal
           node={selectedNode}
           onClose={() => setSelectedNode(null)}
-          onStartGame={handleStartGameFromModal}
+          onSelectGame={handleSelectGameForNode}
         />
       )}
 
       {/* Login Modal */}
       {showLoginModal && <LoginModal onSuccess={handleLoginSuccess} />}
 
-      {/* Bottom Mesoamerican Greca border */}
-      <GrecaBar />
+      {/* Fixed Bottom Navigation (visible unless in an active game session) */}
+      {!activeGameType && !isArcadePlaying && user && (
+        <BottomNav
+          activeTab={activeTab}
+          language={settings.language}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            setPlayingNode(null);
+            setActiveGameType(null);
+            setIsArcadePlaying(false);
+          }}
+        />
+      )}
     </div>
   );
 };

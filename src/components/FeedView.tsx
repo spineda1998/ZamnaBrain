@@ -1,364 +1,300 @@
-import React, { useState, useEffect } from 'react';
-import { User, ProgressSummary } from '../types';
-import { 
-  Compass, 
-  TrendingUp, 
-  Swords, 
-  Scale, 
-  Medal, 
-  Flame, 
-  Grid, 
-  Infinity as InfinityIcon, 
-  Ear, 
-  Gamepad2, 
-  ChevronRight,
-  Clock,
-  Sparkles
-} from 'lucide-react';
+import React from 'react';
+import { User, ProgressSummary, AppLanguage } from '../types';
+import { getT } from '../utils/i18n';
 
 interface FeedViewProps {
   user: User;
   progress: ProgressSummary | null;
-  onContinueSenda: () => void;
-  onPlayTetris: () => void;
-  onPlayZuma: () => void;
-  onPlayMemorama: () => void;
+  language?: AppLanguage;
+  onOpenSendero: () => void;
+  onOpenMinigames: () => void;
   onOpenCodex: () => void;
 }
 
 export const FeedView: React.FC<FeedViewProps> = ({
   user,
   progress,
-  onContinueSenda,
-  onPlayTetris,
-  onPlayZuma,
-  onPlayMemorama,
+  language = 'es',
+  onOpenSendero,
+  onOpenMinigames,
   onOpenCodex,
 }) => {
-  // Live ticking countdown for daily challenges: e.g. 08:42:15
-  const [secondsRemaining, setSecondsRemaining] = useState(31335); // 8h 42m 15s
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsRemaining((s) => (s > 0 ? s - 1 : 86400));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatClock = (totalSec: number) => {
-    const h = Math.floor(totalSec / 3600).toString().padStart(2, '0');
-    const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2, '0');
-    const s = (totalSec % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  };
-
-  const totalCacaos = 2450 + (progress?.jadeCoins ?? 0);
-  const totalGems = 180 + (progress?.totalStars ?? 0) * 10;
-
+  const t = getT(language);
   return (
-    <div className="max-w-[480px] mx-auto py-4 px-3 font-silkscreen select-none text-[#f4efe6]">
-      {/* Top Resource Bar & Status */}
-      <div className="bg-[#181818] border-2 border-[#2b2520] p-3 rounded-lg mb-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          {/* Cacaos / Gold Coin */}
-          <div className="flex items-center gap-1.5 bg-[#1b170e] border border-[#d99b26] px-3 py-1 rounded text-xs text-[#fbbf24] font-press-start">
-            <span className="text-sm">⊚</span>
-            <span>{totalCacaos.toLocaleString()}</span>
-          </div>
+    <div className="w-full max-w-[390px] mx-auto px-2 py-3 pb-24 font-silkscreen select-none text-[#f4efe6] space-y-4">
+      {/* ── Section - 2. FEED BANNER / EVENTO CÓSMICO ACTIVO ── */}
+      <div className="w-full bg-[#2a2a2a] p-[12px] relative overflow-hidden rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffdeac,_inset_-2px_-2px_0px_#bd8717]">
+        {/* Luz ambiente arcade de fondo */}
+        <div className="w-[96px] h-[96px] [filter:blur(10.5px)] absolute right-[-20px] top-[-30px] bg-[#fabc4c08] rounded-full pointer-events-none" />
 
-          {/* Diamonds / Gems */}
-          <div className="flex items-center gap-1.5 bg-[#0a181c] border border-[#06b6d4] px-3 py-1 rounded text-xs text-[#06b6d4] font-press-start">
-            <span className="text-xs">💎</span>
-            <span>{totalGems}</span>
-          </div>
-        </div>
-
-        {/* Status Tag */}
-        <div className="mt-2.5">
-          <span className="inline-block bg-[#1a170f] border border-[#d99b26] px-2.5 py-0.5 rounded text-[10px] text-[#fbbf24] font-press-start tracking-wider">
-            ACTIVO
-          </span>
-        </div>
-      </div>
-
-      {/* Main Feature: SENDA SAGRADA (MUNDO 2: SELVAS DE PALENQUE) */}
-      <div className="bg-[#1e1916] border-2 border-[#382b22] p-4 rounded-lg mb-5 shadow-2xl relative">
-        {/* Top Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 text-[#06b6d4] text-xs font-press-start">
-            <Compass className="w-4 h-4" />
-            <span>SENDA SAGRADA</span>
-          </div>
-          <span className="bg-[#8b2020] text-white border border-[#dc2626] px-2 py-0.5 rounded text-[9px] font-press-start tracking-wide">
-            MUNDO 2
-          </span>
-        </div>
-
-        {/* Title & Subtitle */}
-        <h2 className="font-press-start text-sm sm:text-base text-[#fbbf24] tracking-wide mt-1">
-          SELVAS DE PALENQUE
-        </h2>
-        <p className="text-xs text-[#b8b09f] mt-0.5">
-          Travesía astronómica de templos y estelas
-        </p>
-
-        {/* Visual Preview Box with Pixel Art Backdrop */}
-        <div className="relative mt-3 h-32 rounded border border-[#44352a] overflow-hidden bg-[#111111] flex items-end p-2.5">
-          {/* Pixelated Mayan Ruins Mosaic Graphic */}
-          <div
-            className="absolute inset-0 opacity-40 pixel-art"
-            style={{
-              backgroundImage: `
-                linear-gradient(45deg, #222 25%, transparent 25%), 
-                linear-gradient(-45deg, #222 25%, transparent 25%), 
-                linear-gradient(45deg, transparent 75%, #222 75%), 
-                linear-gradient(-45deg, transparent 75%, #222 75%)
-              `,
-              backgroundSize: '16px 16px',
-              backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
-            }}
-          />
-
-          {/* Mayan Temple Silhouette Backdrop */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-            <svg viewBox="0 0 160 80" className="w-48 h-24 fill-[#d99b26]">
-              {/* Stepped pyramid pixel blocks */}
-              <rect x="20" y="60" width="120" height="15" />
-              <rect x="35" y="45" width="90" height="15" />
-              <rect x="50" y="30" width="60" height="15" />
-              <rect x="65" y="15" width="30" height="15" />
-              <rect x="72" y="5" width="16" height="10" />
+        {/* Header Bento: Título Marquesina + Timer Semanal */}
+        <div className="w-full pb-2 border-b border-[#353535] flex flex-row justify-between items-center relative z-10">
+          <div className="flex flex-row items-center gap-1.5">
+            {/* Sparkles / Star Icon */}
+            <svg
+              viewBox="0 0 14.67 14.67"
+              className="w-[14px] h-[14px] shrink-0 fill-[#fabc4c]"
+            >
+              <path d="M12 5.333L11.167 3.5L9.333 2.667L11.167 1.833L12 0L12.833 1.833L14.667 2.667L12.833 3.5L12 5.333M12 14.667L11.167 12.833L9.333 12L11.167 11.167L12 9.333L12.833 11.167L14.667 12L12.833 12.833L12 14.667M5.333 12.667L3.667 9L0 7.333L3.667 5.667L5.333 2L7 5.667L10.667 7.333L7 9L5.333 12.667M5.333 9.433L6 8L7.433 7.333L6 6.667L5.333 5.233L4.667 6.667L3.233 7.333L4.667 8L5.333 9.433Z" />
             </svg>
+            <div className="flex flex-col">
+              <span className="text-[10px]/[12px] text-[#fabc4c] font-press-start tracking-[-0.25px]">
+                RETOS SEMANALES
+              </span>
+              <span className="text-[8px]/[12px] text-[#76d4e4] font-silkscreen tracking-[0.4px]">
+                ALINEACIÓN CELESTIAL ACTIVA
+              </span>
+            </div>
           </div>
 
-          {/* Progress Badge */}
-          <div className="relative z-10 bg-[#16120b] border border-[#d99b26] px-2.5 py-1 rounded text-[10px] text-[#fbbf24] font-press-start flex items-center gap-1.5 shadow">
-            <span>🚩</span>
-            <span>68% AVANCE</span>
-          </div>
-        </div>
-
-        {/* PRÓXIMO RETO Box */}
-        <div className="mt-3.5 bg-[#171310] border border-[#3d2f25] p-3 rounded-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#fbbf24] font-press-start">
-              PRÓXIMO RETO
+          <div className="flex flex-col items-end">
+            <div className="bg-[#a62b2b] px-1.5 py-0.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+              <span className="text-[8px]/[10px] text-[#ffdad7] font-press-start">
+                X2 EXP
+              </span>
+            </div>
+            <span className="text-[8px]/[12px] text-[#a78a87] font-silkscreen mt-0.5">
+              REINICIO: 3D 14H
             </span>
-            <span className="bg-[#6b1c1c] text-[#fca5a5] border border-[#b91c1c] px-2 py-0.5 rounded text-[9px] font-press-start">
-              -15 ENERGÍA
+          </div>
+        </div>
+
+        {/* Ticker / Bonus Notifier */}
+        <div className="w-full mt-2 p-[4px_8px] bg-[#0e0e0e] rounded-[2px] flex flex-row justify-between items-center [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] relative z-10">
+          <span className="text-[8.5px]/[11px] text-[#ffdeac] font-silkscreen truncate">
+            ★ BONO VIGESIMAL ACTIVO • CIEN ANTORCHAS SAGRADAS
+          </span>
+          <span className="w-1.5 h-1.5 bg-[#fabc4c] rounded-full shrink-0 ml-1.5 animate-pulse" />
+        </div>
+
+        {/* Lista de 3 Misiones Semanales con barras segmentadas */}
+        <div className="w-full mt-2.5 flex flex-col gap-2 relative z-10">
+          {/* Reto 1 */}
+          <div className="w-full p-2 bg-[#0e0e0e] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099]">
+            <div className="flex flex-row justify-between items-center text-[10px]/[12px]">
+              <span className="text-[#e5e2e1] font-silkscreen font-bold tracking-[0.6px] truncate">
+                ✦ Descifra 3 estelas en Copán
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0 font-press-start text-[8px]">
+                <span className="text-[#76d4e4]">2/3</span>
+                <span className="text-[#fabc4c]">+500XP</span>
+              </div>
+            </div>
+            {/* Segmented Progress Bar */}
+            <div className="w-full h-[8px] bg-[#353535] mt-1.5 p-[1px] flex flex-row gap-1 rounded-[1px]">
+              <div className="flex-1 bg-[#76d4e4]" />
+              <div className="flex-1 bg-[#76d4e4]" />
+              <div className="flex-1 bg-[#0e0e0e]/50" />
+            </div>
+          </div>
+
+          {/* Reto 2 */}
+          <div className="w-full p-2 bg-[#0e0e0e] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099]">
+            <div className="flex flex-row justify-between items-center text-[10px]/[12px]">
+              <span className="text-[#e5e2e1] font-silkscreen font-bold tracking-[0.6px] truncate">
+                ✦ 5 victorias en Minijuegos
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0 font-press-start text-[8px]">
+                <span className="text-[#fabc4c]">4/5</span>
+                <span className="text-[#fabc4c]">+80 CACAO</span>
+              </div>
+            </div>
+            {/* Segmented Progress Bar */}
+            <div className="w-full h-[8px] bg-[#353535] mt-1.5 p-[1px] flex flex-row gap-1 rounded-[1px]">
+              <div className="flex-1 bg-[#fabc4c]" />
+              <div className="flex-1 bg-[#fabc4c]" />
+              <div className="flex-1 bg-[#fabc4c]" />
+              <div className="flex-1 bg-[#fabc4c]" />
+              <div className="flex-1 bg-[#0e0e0e]/50" />
+            </div>
+          </div>
+
+          {/* Reto 3: Completado */}
+          <div className="w-full p-2 bg-[#0e0e0e] border-l-2 border-[#76d4e4] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099]">
+            <div className="flex flex-row justify-between items-center text-[10px]/[12px]">
+              <span className="text-[#76d4e4] font-silkscreen font-bold tracking-[0.6px] truncate">
+                ✦ Duelo Matemático Vigesimal
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0 font-press-start text-[8px]">
+                <span className="text-[#76d4e4]">✓ LISTO</span>
+                <span className="text-[#76d4e4]">+1 JADE</span>
+              </div>
+            </div>
+            {/* Segmented Progress Bar (Completed) */}
+            <div className="w-full h-[8px] bg-[#76d4e4]/20 mt-1.5 p-[1px] flex flex-row rounded-[1px]">
+              <div className="w-full h-full bg-[#76d4e4]" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section - 3. LOS RECUADROS PRINCIPALES (GRID RETRO ARCADE DE PIEDRA & ORO) ── */}
+      <div className="w-full flex flex-col gap-3">
+        {/* ── BENTO TILE 1: SENDA SAGRADA (HERO CARD) ── */}
+        <div className="w-full bg-[#2a2a2a] p-[12px] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffdeac,_inset_-2px_-2px_0px_#bd8717] overflow-hidden relative">
+          <div className="w-[112px] h-[112px] [filter:blur(10.5px)] absolute right-[-20px] top-[-20px] bg-[#ffb3ad05] rounded-full pointer-events-none" />
+
+          {/* Header de tarjeta */}
+          <div className="w-full flex flex-row justify-between items-center pb-2">
+            <div className="flex flex-row items-center gap-1.5">
+              <span className="bg-[#a62b2b] text-[#ffdad7] font-press-start text-[8px]/[12px] px-2 py-0.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                MODO HISTORIA
+              </span>
+              <span className="bg-[#0e0e0e] text-[#fabc4c] font-press-start text-[8px]/[12px] px-1.5 py-0.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                COPÁN
+              </span>
+            </div>
+            <span className="text-[9px]/[14px] text-[#fabc4c] font-silkscreen tracking-[0.45px]">
+              FASE ASTRONÓMICA
             </span>
           </div>
 
-          <h3 className="font-press-start text-xs text-[#f4efe6] leading-snug">
-            Templo de los Glifos Vigesimales
-          </h3>
-
-          <p className="text-xs text-[#a39c8f] leading-relaxed">
-            Descifra la lápida funeraria de Pakal mediante suma de barras y puntos.
-          </p>
-
-          <button
-            onClick={onContinueSenda}
-            className="w-full mt-2 py-3 bg-[#a62b2b] hover:bg-[#ba3232] text-white border-2 border-[#f87171] rounded font-press-start text-xs retro-button flex items-center justify-center gap-2 cursor-pointer shadow-lg tracking-wider"
-          >
-            <span>CONTINUAR SENDA</span>
-            <span>→</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ACTIVIDAD RECIENTE Section */}
-      <div className="mb-5 space-y-2.5">
-        <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-1.5 text-xs text-[#06b6d4] font-press-start">
-            <TrendingUp className="w-4 h-4 text-[#06b6d4]" />
-            <span className="text-[#f4efe6]">ACTIVIDAD RECIENTE</span>
-          </div>
-          <button
-            onClick={onContinueSenda}
-            className="bg-[#1f1a14] border border-[#523f2f] text-[#fbbf24] hover:bg-[#2b231a] px-2.5 py-0.5 rounded text-[10px] font-silkscreen cursor-pointer"
-          >
-            HISTORIAL
-          </button>
-        </div>
-
-        {/* Activity Item 1: Balanza de Jade */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#20180e] border border-[#d99b26] flex items-center justify-center text-base shrink-0 text-[#fbbf24]">
-              <Scale className="w-5 h-5 text-[#fbbf24]" />
+          {/* Cuerpo de Senda Sagrada */}
+          <div className="w-full flex flex-row items-center gap-3 my-2">
+            {/* Pyramid SVG in 64x64 Box */}
+            <div className="w-[60px] h-[60px] shrink-0 bg-[#0e0e0e] p-2 flex items-center justify-center rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] relative">
+              <svg
+                viewBox="0 0 40 40"
+                className="w-10 h-10 stroke-[#ffdeac] fill-none"
+                strokeWidth="1.5"
+              >
+                <path d="M18 0L22 0V4H18V0M12 8H28V12H12V8M8 16H32V20H8V16M4 24H36V28H4V24M0 32H40V40H0V32M16 12H24V36H16V12" />
+              </svg>
             </div>
-            <div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6] line-clamp-1">
-                +120 Cacaos en Balanza de Jad
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                Hace 25 min • Puntuación Perfecta
+
+            <div className="flex-1 flex flex-col justify-start">
+              <h2 className="text-[16px]/[22px] text-[#ffdeac] font-press-start tracking-[0.45px]">
+                SENDA SAGRADA
+              </h2>
+              <p className="text-[10px]/[13px] text-[#e0bfbc] font-space-mono mt-1 leading-snug">
+                Minimapa astronómico de Copán: resuelve enigmas y alinea estelas ceremoniales.
               </p>
             </div>
           </div>
-          <span className="bg-[#241c0f] border border-[#d99b26] text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-press-start whitespace-nowrap">
-            +120 ☼
-          </span>
-        </div>
 
-        {/* Activity Item 2: Nodo 03 superado */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#0a181c] border border-[#06b6d4] flex items-center justify-center text-base shrink-0 text-[#06b6d4]">
-              <Medal className="w-5 h-5 text-[#06b6d4]" />
-            </div>
-            <div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6] line-clamp-1">
-                Nodo 03 superado en Senda
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                3 Estrellas completas en Palenque
-              </p>
-            </div>
-          </div>
-          <span className="bg-[#0b1f24] border border-[#06b6d4] text-[#06b6d4] px-2 py-0.5 rounded text-[10px] font-press-start tracking-widest whitespace-nowrap">
-            ★★★
-          </span>
-        </div>
-
-        {/* Activity Item 3: Racha de 7 días */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#240e0e] border border-[#ef4444] flex items-center justify-center text-base shrink-0 text-[#ef4444]">
-              <Flame className="w-5 h-5 text-[#ef4444]" />
-            </div>
-            <div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6] line-clamp-1">
-                Racha de 7 días activa
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                Bonificación solar x2 reclamada
-              </p>
-            </div>
-          </div>
-          <span className="bg-[#380e0e] border border-[#ef4444] text-[#ef4444] px-2 py-0.5 rounded text-[10px] font-press-start tracking-wider whitespace-nowrap">
-            RACHA
-          </span>
-        </div>
-      </div>
-
-      {/* DESAFÍOS DIARIOS Section */}
-      <div className="mb-5 space-y-2.5">
-        <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-1.5 text-xs text-[#fbbf24] font-press-start">
-            <Swords className="w-4 h-4 text-[#fbbf24]" />
-            <span className="text-[#f4efe6]">DESAFÍOS DIARIOS</span>
-          </div>
-          <div className="flex items-center gap-1 text-[10px] text-[#fbbf24] font-press-start">
-            <span>RELOJ</span>
-            <span className="font-mono">{formatClock(secondsRemaining)}</span>
-          </div>
-        </div>
-
-        {/* Daily 1: Cálculo de Mazorcas (Tetris Maya) */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[#20180e] border border-[#d99b26] flex items-center justify-center shrink-0 text-[#fbbf24]">
-              <Grid className="w-5 h-5 text-[#fbbf24]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[9px] text-[#fbbf24] font-press-start">
-                  +40 MANÁ
-                </span>
-                <span className="text-[10px] text-[#7a7264]">
-                  3H RESTANTE
+          {/* Progreso y Botón Primario */}
+          <div className="w-full mt-2 flex flex-col gap-2">
+            <div className="w-full p-[6px_8px] bg-[#0e0e0e] flex flex-row justify-between items-center rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099]">
+              <span className="text-[9px]/[14px] text-[#e0bfbc] font-silkscreen">
+                ESTELAS TALLADAS
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-2 bg-[#353535] p-[1px] flex">
+                  <div className="w-2/3 h-full bg-[#fabc4c]" />
+                </div>
+                <span className="text-[9px]/[14px] text-[#fabc4c] font-press-start">
+                  8/12
                 </span>
               </div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6]">
-                Cálculo de Mazorcas
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                5 divisiones del tributo imperial
-              </p>
             </div>
+
+            <button
+              onClick={onOpenSendero}
+              className="w-full h-10 bg-[#a62b2b] hover:bg-[#ba3232] text-[#ffdad7] font-press-start text-[10px] tracking-[0.8px] flex items-center justify-center gap-2 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_3px_3px_0px_#ffb3ad,_inset_-3px_-3px_0px_#68000a] active:translate-y-0.5 cursor-pointer transition shadow-lg"
+            >
+              <span>CONTINUAR SENDA</span>
+              <span>→</span>
+            </button>
           </div>
-          <button
-            onClick={onPlayTetris}
-            className="px-3.5 py-1.5 bg-[#d99b26] hover:bg-[#f59e0b] text-black font-press-start text-[10px] font-bold rounded retro-button cursor-pointer"
-          >
-            JUGAR
-          </button>
         </div>
 
-        {/* Daily 2: Reflejo Serpiente Zuma (Zuma Game) */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[#0b1f1a] border border-[#10b981] flex items-center justify-center shrink-0 text-[#10b981]">
-              <InfinityIcon className="w-5 h-5 text-[#10b981]" />
-            </div>
+        {/* ── GRID 2 COLUMNAS: MINIJUEGOS & CÓDICE ── */}
+        <div className="w-full grid grid-cols-2 gap-2.5">
+          {/* ── BENTO TILE 2: MINIJUEGOS ── */}
+          <div className="bg-[#2a2a2a] p-3 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[9px] text-[#22c55e] font-press-start">
-                  +100 CACAOS
+              <div className="flex flex-row justify-between items-center mb-2">
+                <span className="bg-[#bd8717] text-[#3a2600] font-press-start text-[7.5px]/[12px] px-1.5 py-0.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                  2 JUEGOS
                 </span>
-                <span className="text-[10px] text-[#7a7264]">
-                  1 INTENTO
+                <span className="w-1.5 h-1.5 bg-[#76d4e4] rounded-full animate-pulse" />
+              </div>
+
+              {/* Icon & Title */}
+              <div className="flex flex-row items-center gap-2 mb-2">
+                <div className="w-9 h-9 shrink-0 bg-[#0e0e0e] flex items-center justify-center text-xl rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                  🕹️
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-[10px]/[11px] text-[#ffdeac] font-press-start tracking-[0.6px]">
+                    MINIJUEGOS
+                  </h3>
+                  <span className="text-[8px]/[12px] text-[#e0bfbc] font-silkscreen mt-0.5">
+                    Tetris & Memorama
+                  </span>
+                </div>
+              </div>
+
+              {/* Récord */}
+              <div className="p-1.5 bg-[#0e0e0e] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099] mb-2">
+                <span className="text-[7.5px]/[10px] text-[#a78a87] font-silkscreen block">
+                  RÉCORD:
+                </span>
+                <span className="text-[8.5px]/[13px] text-[#76d4e4] font-press-start block mt-0.5">
+                  48,200 PTS
                 </span>
               </div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6]">
-                Reflejo Serpiente Zuma
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                Alinea 3 jades en menos de 45s
-              </p>
             </div>
-          </div>
-          <button
-            onClick={onPlayZuma}
-            className="px-3.5 py-1.5 bg-[#059669] hover:bg-[#10b981] text-white font-press-start text-[10px] font-bold rounded retro-button cursor-pointer"
-          >
-            ENTRAR
-          </button>
-        </div>
 
-        {/* Daily 3: Glifos Sonoros & Memorama (Memorama Maya) */}
-        <div className="bg-[#191512] border border-[#33261c] p-3 rounded flex items-center justify-between gap-3 shadow">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[#240e0e] border border-[#ef4444] flex items-center justify-center shrink-0 text-[#ef4444]">
-              <Ear className="w-5 h-5 text-[#ef4444]" />
-            </div>
+            <button
+              onClick={onOpenMinigames}
+              className="w-full h-8 bg-[#fabc4c] hover:bg-[#ffcf66] text-[#432c00] font-press-start text-[9px] flex items-center justify-center gap-1.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2.5px_2.5px_0px_#ffdeac,_inset_-2.5px_-2.5px_0px_#855700] active:translate-y-0.5 cursor-pointer transition"
+            >
+              <span>JUGAR</span>
+              <svg viewBox="0 0 10 10" className="w-2.5 h-2.5 fill-[#432c00]">
+                <path d="M2 1L8 5L2 9V1Z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* ── BENTO TILE 3: CÓDICE ── */}
+          <div className="bg-[#2a2a2a] p-3 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[9px] text-[#f87171] font-press-start">
-                  +80 XP
+              <div className="flex flex-row justify-between items-center mb-2">
+                <span className="bg-[#353535] text-[#e5e2e1] font-press-start text-[7.5px]/[12px] px-1.5 py-0.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                  ARCHIVOS
                 </span>
-                <span className="text-[10px] text-[#7a7264]">
-                  CÓDICE
+                <span className="text-[8px]/[12px] text-[#a78a87] font-silkscreen">
+                  RELIC
                 </span>
               </div>
-              <h4 className="font-press-start text-[11px] text-[#f4efe6]">
-                Glifos Sonoros
-              </h4>
-              <p className="text-[10px] text-[#8e8576] mt-0.5">
-                1 lección fonética náhuatl/maya
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onPlayMemorama}
-            className="px-3 py-1.5 bg-[#8b2020] hover:bg-[#b91c1c] text-white font-press-start text-[10px] font-bold rounded retro-button cursor-pointer"
-          >
-            ESTUDIAR
-          </button>
-        </div>
-      </div>
 
-      {/* Arcade Machine Footer Banner */}
-      <div className="bg-[#121212] border-2 border-[#2b2520] p-2.5 rounded-lg flex items-center justify-between text-[10px] font-press-start text-[#fbbf24] shadow-inner">
-        <div className="flex items-center gap-1.5 text-[#fbbf24]">
-          <Gamepad2 className="w-3.5 h-3.5 text-[#d99b26]" />
-          <span>CABINA: ITZAMNA #042</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[#06b6d4]">
-          <span className="w-2 h-2 rounded-full bg-[#06b6d4] animate-pulse" />
-          <span>CRÉDITO 1P DISPONIBLE</span>
+              {/* Icon & Title */}
+              <div className="flex flex-row items-center gap-2 mb-2">
+                <div className="w-9 h-9 shrink-0 bg-[#0e0e0e] flex items-center justify-center text-xl rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099]">
+                  📜
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-[10px]/[11px] text-[#ffdeac] font-press-start tracking-[0.6px]">
+                    CÓDICE
+                  </h3>
+                  <span className="text-[8px]/[12px] text-[#e0bfbc] font-silkscreen mt-0.5">
+                    30 Pergaminos
+                  </span>
+                </div>
+              </div>
+
+              {/* Hallados */}
+              <div className="p-1.5 bg-[#0e0e0e] rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099] mb-2">
+                <span className="text-[7.5px]/[10px] text-[#a78a87] font-silkscreen block">
+                  HALLADOS:
+                </span>
+                <span className="text-[8.5px]/[13px] text-[#fabc4c] font-press-start block mt-0.5">
+                  14/30 • 3 SEC
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenCodex}
+              className="w-full h-8 bg-[#0e0e0e] hover:bg-[#1a1a1a] text-[#ffdeac] font-press-start text-[8px] flex items-center justify-center gap-1.5 rounded-[2px] [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] active:translate-y-0.5 cursor-pointer transition border border-[#353535]"
+            >
+              <span>VER CÓDICE</span>
+              <svg viewBox="0 0 11 8" className="w-2.5 h-2 fill-[#ffdeac]">
+                <path d="M1 1L5 4L1 7V1ZM6 1L10 4L6 7V1Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

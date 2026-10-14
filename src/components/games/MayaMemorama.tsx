@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, RefreshCw, Trophy, Sparkles, Check, Clock, Zap } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Star, Check } from 'lucide-react';
+import { GameNode } from '../../types';
 import { GrecaBar } from '../GrecaBar';
 
 interface MayaMemoramaProps {
+  node?: GameNode | null;
   onClose: () => void;
   onReward?: (coins: number) => void;
+  onVictory?: (stars: number, coins: number) => void;
 }
 
 interface CardItem {
@@ -17,7 +20,6 @@ interface CardItem {
   subtitle: string;
 }
 
-// 8 Numerical Pairs for the current match
 const NUM_PAIRS_DATA = [
   { val: 0, title: 'Concha (Semilla)', subtitle: 'Cero en cuenta larga' },
   { val: 1, title: 'Un Punto', subtitle: 'Unidad Sagrada' },
@@ -29,7 +31,7 @@ const NUM_PAIRS_DATA = [
   { val: 15, title: 'Tres Barras', subtitle: 'Triple Barra (5+5+5)' },
 ];
 
-export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward }) => {
+export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ node, onClose, onReward, onVictory }) => {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [flippedIds, setFlippedIds] = useState<string[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
@@ -56,13 +58,12 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
     }
   }, []);
 
-  // Render Maya Glyphs (Shell for 0, Dots and Bars)
   const renderMayaGlyph = (val: number) => {
     if (val === 0) {
       return (
         <div className="flex flex-col items-center">
-          <span className="text-3xl filter drop-shadow">🐚</span>
-          <span className="font-silkscreen text-[9px] text-[#fbbf24] mt-1">Concha (0)</span>
+          <span className="text-2xl filter drop-shadow">🐚</span>
+          <span className="font-silkscreen text-[8px] text-[#fbbf24] mt-0.5">Cero (0)</span>
         </div>
       );
     }
@@ -71,13 +72,13 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
     const dots = val % 5;
 
     return (
-      <div className="flex flex-col items-center gap-1.5 py-1">
+      <div className="flex flex-col items-center gap-1 py-0.5">
         {dots > 0 && (
-          <div className="flex gap-1.5 justify-center">
+          <div className="flex gap-1 justify-center">
             {Array.from({ length: dots }).map((_, i) => (
               <div
                 key={i}
-                className="w-3.5 h-3.5 rounded-full bg-[#fbbf24] border-2 border-[#b45309] shadow-sm"
+                className="w-3 h-3 rounded-full bg-[#fbbf24] border-2 border-[#b45309] shadow-sm"
               />
             ))}
           </div>
@@ -85,7 +86,7 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
         {Array.from({ length: bars }).map((_, i) => (
           <div
             key={i}
-            className="w-16 h-2.5 bg-[#d99b26] border border-[#78350f] rounded-xs shadow-sm"
+            className="w-12 h-2 bg-[#d99b26] border border-[#78350f] rounded-xs shadow-sm"
           />
         ))}
       </div>
@@ -96,7 +97,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
     const deck: CardItem[] = [];
 
     NUM_PAIRS_DATA.forEach((item) => {
-      // Glyph card
       deck.push({
         id: `glyph_${item.val}`,
         pairId: item.val,
@@ -106,7 +106,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
         subtitle: item.title,
       });
 
-      // Arabic card
       deck.push({
         id: `arabic_${item.val}`,
         pairId: item.val,
@@ -117,7 +116,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
       });
     });
 
-    // Shuffle deck
     const shuffled = [...deck].sort(() => Math.random() - 0.5);
     setCards(shuffled);
     setFlippedIds([]);
@@ -131,7 +129,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
     setupGame();
   }, [setupGame]);
 
-  // Timer
   useEffect(() => {
     if (isWon) return;
     const interval = setInterval(() => {
@@ -140,7 +137,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
     return () => clearInterval(interval);
   }, [isWon]);
 
-  // Card click handler
   const handleCardClick = (card: CardItem) => {
     if (flippedIds.length >= 2) return;
     if (flippedIds.includes(card.id)) return;
@@ -156,7 +152,6 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
       const secondCard = card;
 
       if (firstCard.pairId === secondCard.pairId) {
-        // Match!
         playBeep(660, 'sine', 0.2);
         setTimeout(() => {
           setMatchedPairs((mp) => {
@@ -164,14 +159,17 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
             if (nextMatches.length === NUM_PAIRS_DATA.length) {
               setIsWon(true);
               confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-              if (onReward) onReward(80);
+
+              const earnedStars = moves <= 14 ? 3 : moves <= 20 ? 2 : 1;
+              const earnedCoins = earnedStars * 40 + (node?.isBoss ? 80 : 30);
+              if (onVictory) onVictory(earnedStars, earnedCoins);
+              if (onReward) onReward(earnedCoins);
             }
             return nextMatches;
           });
           setFlippedIds([]);
         }, 500);
       } else {
-        // No match
         playBeep(200, 'sawtooth', 0.15);
         setTimeout(() => {
           setFlippedIds([]);
@@ -181,60 +179,60 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-4 px-2 space-y-4">
+    <div className="max-w-md sm:max-w-xl mx-auto px-2 py-3 space-y-3 pb-24">
       <GrecaBar />
 
       {/* Header Bar */}
-      <div className="bg-[#1f1f1f] border-2 border-[#a62b2b] p-3 rounded-lg flex items-center justify-between shadow-lg">
+      <div className="bg-[#1e1916] border-2 border-[#a62b2b] p-2.5 rounded-lg flex items-center justify-between shadow-md">
         <button
           onClick={onClose}
-          className="px-3 py-1.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded font-silkscreen text-xs flex items-center gap-1.5 cursor-pointer"
+          className="px-2.5 py-1 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded font-silkscreen text-[11px] flex items-center gap-1 cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Volver al Templo
+          <ArrowLeft className="w-3.5 h-3.5" /> Salir
         </button>
 
         <div className="text-center">
-          <h2 className="font-press-start text-xs sm:text-sm text-[#fbbf24]">
-            MEMORAMA VIGESIMAL MAYA
+          <h2 className="font-press-start text-[11px] sm:text-xs text-[#fbbf24]">
+            {node ? node.title : 'MEMORAMA VIGESIMAL MAYA'}
           </h2>
-          <span className="font-silkscreen text-[11px] text-[#9ca3af]">
-            Empareja los glifos con su valor arábigo
+          <span className="font-silkscreen text-[10px] text-[#a39c8f]">
+            Empareja glifos con números arábigos
           </span>
         </div>
 
         <button
           onClick={setupGame}
-          className="p-1.5 bg-[#a62b2b] hover:bg-[#c0392b] text-[#f4efe6] rounded border border-[#d99b26] cursor-pointer"
-          title="Reiniciar partida"
+          className="p-1 bg-[#a62b2b] hover:bg-[#c0392b] text-white rounded border border-[#d99b26] cursor-pointer"
+          title="Reiniciar"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#1a1a1a] border border-[#333] p-2.5 rounded text-center">
-          <span className="font-silkscreen text-[10px] text-[#9ca3af] block">PAREJAS</span>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-[#181818] border border-[#33261c] p-2 rounded text-center">
+          <span className="font-silkscreen text-[9px] text-[#8e8576] block">PAREJAS</span>
           <span className="font-press-start text-xs text-[#22c55e]">
-            {matchedPairs.length} / {NUM_PAIRS_DATA.length}
+            {matchedPairs.length}/{NUM_PAIRS_DATA.length}
           </span>
         </div>
 
-        <div className="bg-[#1a1a1a] border border-[#333] p-2.5 rounded text-center">
-          <span className="font-silkscreen text-[10px] text-[#9ca3af] block">MOVIMIENTOS</span>
+        <div className="bg-[#181818] border border-[#33261c] p-2 rounded text-center">
+          <span className="font-silkscreen text-[9px] text-[#8e8576] block">INTENTOS</span>
           <span className="font-press-start text-xs text-[#fbbf24]">{moves}</span>
         </div>
 
-        <div className="bg-[#1a1a1a] border border-[#333] p-2.5 rounded text-center">
-          <span className="font-silkscreen text-[10px] text-[#9ca3af] block">TIEMPO</span>
+        <div className="bg-[#181818] border border-[#33261c] p-2 rounded text-center">
+          <span className="font-silkscreen text-[9px] text-[#8e8576] block">TIEMPO</span>
           <span className="font-press-start text-xs text-[#06b6d4]">
             {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
           </span>
         </div>
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[#141414] border-4 border-[#333] rounded-lg">
+      {/* Cards Grid 4x4 */}
+      <div className="grid grid-cols-4 gap-2 p-2.5 bg-[#141414] border-2 border-[#33261c] rounded-lg">
         {cards.map((card) => {
           const isFlipped = flippedIds.includes(card.id) || matchedPairs.includes(card.pairId);
           const isMatched = matchedPairs.includes(card.pairId);
@@ -243,29 +241,29 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
             <div
               key={card.id}
               onClick={() => handleCardClick(card)}
-              className={`h-36 rounded-lg border-2 cursor-pointer transition-all duration-300 transform select-none flex flex-col items-center justify-center p-3 text-center relative ${
+              className={`h-24 sm:h-28 rounded-md border cursor-pointer transition-all duration-200 select-none flex flex-col items-center justify-center p-1.5 text-center relative ${
                 isMatched
-                  ? 'bg-[#18261c] border-[#22c55e] opacity-90 shadow-md scale-[0.98]'
+                  ? 'bg-[#18261c] border-[#22c55e] opacity-90 shadow'
                   : isFlipped
-                  ? 'bg-[#2b220e] border-[#d99b26] shadow-xl scale-100'
-                  : 'bg-[#261f1a] border-[#554336] hover:border-[#d99b26] hover:scale-[1.02] shadow-md'
+                  ? 'bg-[#2b200b] border-[#d99b26] shadow-md scale-100'
+                  : 'bg-[#241a15] border-[#44362b] hover:border-[#d99b26] shadow'
               }`}
             >
               {isFlipped ? (
-                <div className="w-full flex flex-col items-center justify-center space-y-1">
+                <div className="w-full flex flex-col items-center justify-center">
                   {card.type === 'glyph' ? (
                     <div>
                       {renderMayaGlyph(card.numberValue)}
-                      <span className="font-silkscreen text-[10px] text-[#fbbf24] block mt-1">
-                        GLIFO MAYA
+                      <span className="font-silkscreen text-[8px] text-[#fbbf24] block mt-0.5">
+                        GLIFO
                       </span>
                     </div>
                   ) : (
                     <div>
-                      <span className="font-press-start text-3xl text-[#fbbf24] block mb-1">
+                      <span className="font-press-start text-2xl text-[#fbbf24] block">
                         {card.numberValue}
                       </span>
-                      <span className="font-silkscreen text-[10px] text-[#e5e5e5] block line-clamp-1">
+                      <span className="font-silkscreen text-[8px] text-[#b8b09f] block line-clamp-1">
                         {card.subtitle}
                       </span>
                     </div>
@@ -273,14 +271,14 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
 
                   {isMatched && (
                     <div className="absolute top-1 right-1 bg-[#22c55e] text-black rounded-full p-0.5">
-                      <Check className="w-3 h-3" />
+                      <Check className="w-2.5 h-2.5" />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center space-y-1">
-                  <span className="text-3xl filter drop-shadow">🗿</span>
-                  <span className="font-silkscreen text-[9px] text-[#9ca3af]">
+                <div className="flex flex-col items-center justify-center space-y-0.5">
+                  <span className="text-xl">🗿</span>
+                  <span className="font-silkscreen text-[8px] text-[#8e8576]">
                     TABLILLA
                   </span>
                 </div>
@@ -292,26 +290,31 @@ export const MayaMemorama: React.FC<MayaMemoramaProps> = ({ onClose, onReward })
 
       {/* Win Modal */}
       {isWon && (
-        <div className="p-6 bg-[#18261c] border-4 border-[#22c55e] rounded-lg text-center space-y-3 shadow-2xl">
-          <div className="text-4xl">👑</div>
-          <h3 className="font-press-start text-sm text-[#22c55e]">
-            ¡MEMORIA DE SABIO MAYA DEMOSTRADA!
+        <div className="p-4 bg-[#18261c] border-2 border-[#22c55e] rounded-lg text-center space-y-2 shadow-xl">
+          <div className="text-3xl">👑</div>
+          <h3 className="font-press-start text-xs text-[#22c55e]">
+            ¡MEMORIA DE SABIO DEMOSTRADA!
           </h3>
           <p className="font-silkscreen text-xs text-[#d1d5db]">
-            Has emparejado todas las tablillas en {moves} movimientos y {seconds} segundos.
+            Has emparejado todas las tablillas en {moves} intentos.
           </p>
-          <div className="flex justify-center gap-3 pt-2">
+          <div className="flex justify-center gap-1 text-[#fbbf24] py-1">
+            <Star className="w-4 h-4 fill-[#fbbf24]" />
+            <Star className="w-4 h-4 fill-[#fbbf24]" />
+            <Star className="w-4 h-4 fill-[#fbbf24]" />
+          </div>
+          <div className="flex justify-center gap-2 pt-1">
             <button
               onClick={setupGame}
-              className="px-4 py-2 bg-[#d99b26] hover:bg-[#f59e0b] text-black font-press-start text-xs rounded retro-button cursor-pointer"
+              className="px-3 py-1.5 bg-[#d99b26] hover:bg-[#f59e0b] text-black font-press-start text-[9px] rounded retro-button cursor-pointer"
             >
               JUGAR OTRA VEZ
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-white font-press-start text-xs rounded border border-[#555] cursor-pointer"
+              className="px-3 py-1.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-white font-press-start text-[9px] rounded border border-[#555] cursor-pointer"
             >
-              VOLVER
+              CONTINUAR
             </button>
           </div>
         </div>

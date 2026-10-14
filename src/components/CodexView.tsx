@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { CodexEntry } from '../types';
 import { api } from '../api';
-import { BookOpen, Search, Lock, Unlock, Calculator, Sparkles } from 'lucide-react';
+import { BookOpen, Search, Lock, Unlock, Calculator, Sparkles, ArrowLeft } from 'lucide-react';
 
-export const CodexView: React.FC = () => {
+interface CodexViewProps {
+  onBackToFeed?: () => void;
+}
+
+export const CodexView: React.FC<CodexViewProps> = ({ onBackToFeed }) => {
   const [entries, setEntries] = useState<CodexEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<CodexEntry | null>(null);
   const [topicFilter, setTopicFilter] = useState<string>('');
@@ -88,7 +92,20 @@ export const CodexView: React.FC = () => {
   const level1 = decimalNumber % 20; // Unidades
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-6">
+    <div className="max-w-5xl mx-auto py-4 px-4 space-y-5 pb-24">
+      {/* Return to Feed Bar */}
+      {onBackToFeed && (
+        <div className="w-full flex items-center justify-between pb-1">
+          <button
+            onClick={onBackToFeed}
+            className="flex items-center gap-1.5 text-[9px] text-[#ffdeac] hover:text-[#fabc4c] font-press-start bg-[#20201f] hover:bg-[#2a2a2a] px-3 py-1.5 rounded-[2px] border border-[#353535] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099] cursor-pointer transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← VOLVER AL FEED</span>
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-[#211d17] border-4 border-[#a62b2b] p-6 rounded-lg text-center shadow-xl">
         <h2 className="font-press-start text-base sm:text-lg text-[#fbbf24]">

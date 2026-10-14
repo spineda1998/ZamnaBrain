@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET || 'zumabrain-sandbox-dev-secret';
-const DEMO_PASSWORD = 'zuma1234';
+const DEMO_PASSWORD = '12345678';
 
 // ── Passwords & Crypto ─────────────────────────────────────────
 function hashPassword(password: string): string {
@@ -97,14 +97,10 @@ interface DB {
 
 function initSeed(): DB {
   const now = new Date().toISOString();
-  const pw = hashPassword(DEMO_PASSWORD);
+  const pw = hashPassword('12345678');
 
   const users: User[] = [
-    { id: 'u_balam', email: 'balam@zuma.dev', nickname: 'BALAM', role: 'student', passwordHash: pw, createdAt: now },
-    { id: 'u_ixchel', email: 'ixchel@zuma.dev', nickname: 'IXCHEL', role: 'student', passwordHash: pw, createdAt: now },
-    { id: 'u_chac', email: 'chac@zuma.dev', nickname: 'CHAC', role: 'student', passwordHash: pw, createdAt: now },
-    { id: 'u_itzamna', email: 'itzamna@zuma.dev', nickname: 'ITZAMNA', role: 'student', passwordHash: pw, createdAt: now },
-    { id: 'u_kukulkan', email: 'profe@zuma.dev', nickname: 'KUKULKAN', role: 'teacher', passwordHash: pw, createdAt: now },
+    { id: 'u_miguelito', email: 'miguelito@alumno.com', nickname: 'MIGUELITO', role: 'student', passwordHash: pw, createdAt: now },
   ];
 
   const sections: Section[] = [
@@ -189,20 +185,16 @@ function initSeed(): DB {
       id: 'c_kukul',
       code: 'KUKUL-04',
       name: '4° A — Matemáticas Mayas',
-      teacherId: 'u_kukulkan',
+      teacherId: 'u_miguelito',
       sectionIds: ['s_alba', 's_kukulkan'],
-      memberIds: ['u_balam', 'u_ixchel', 'u_chac', 'u_itzamna'],
+      memberIds: ['u_miguelito'],
       createdAt: now,
     },
   ];
 
   const progress: ProgressRecord[] = [
-    { userId: 'u_balam', nodeId: 'n1', stars: 3, jadeCoins: 120, completedAt: now },
-    { userId: 'u_balam', nodeId: 'n2', stars: 2, jadeCoins: 100, completedAt: now },
-    { userId: 'u_ixchel', nodeId: 'n1', stars: 3, jadeCoins: 130, completedAt: now },
-    { userId: 'u_ixchel', nodeId: 'n2', stars: 3, jadeCoins: 125, completedAt: now },
-    { userId: 'u_ixchel', nodeId: 'n3', stars: 3, jadeCoins: 160, completedAt: now },
-    { userId: 'u_chac', nodeId: 'n1', stars: 2, jadeCoins: 90, completedAt: now },
+    { userId: 'u_miguelito', nodeId: 'n1', stars: 3, jadeCoins: 120, completedAt: now },
+    { userId: 'u_miguelito', nodeId: 'n2', stars: 2, jadeCoins: 100, completedAt: now },
   ];
 
   const codex: CodexEntry[] = [

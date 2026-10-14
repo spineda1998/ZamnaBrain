@@ -18,6 +18,10 @@
   font-family: 'Silkscreen', monospace;
 }
 
+.font-space-mono {
+  font-family: 'Space Mono', monospace;
+}
+
 /* Retro pixelated shadows and borders */
 .retro-border {
   box-shadow: inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),

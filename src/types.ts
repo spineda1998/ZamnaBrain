@@ -1,8 +1,21 @@
+export type AppLanguage = 'es' | 'nah' | 'myn' | 'en';
+
 export interface User {
   id: string;
   email: string;
   nickname: string;
   role: 'student' | 'teacher';
+  avatar?: string;
+  difficulty?: 'aprendiz' | 'sacerdote' | 'ajau';
+  language?: AppLanguage;
+}
+
+export interface GameSettings {
+  bgm: boolean;
+  sfx: boolean;
+  volume: number;
+  difficulty: 'aprendiz' | 'sacerdote' | 'ajau';
+  language: AppLanguage;
 }
 
 export interface Section {

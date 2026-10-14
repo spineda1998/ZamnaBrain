@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, RotateCw, ArrowDown, ArrowLeft as MoveLeft, ArrowRight as MoveRight, Zap, RefreshCw, Trophy, Sparkles } from 'lucide-react';
+import { ArrowLeft, RotateCw, ArrowDown, ArrowLeft as MoveLeft, ArrowRight as MoveRight, Zap, RefreshCw, Trophy, Sparkles, Star } from 'lucide-react';
+import { GameNode } from '../../types';
 import { GrecaBar } from '../GrecaBar';
 
 interface MayaTetrisProps {
+  node?: GameNode | null;
   onClose: () => void;
   onReward?: (coins: number) => void;
+  onVictory?: (stars: number, coins: number) => void;
 }
 
 const COLS = 10;
 const ROWS = 20;
-const BLOCK_SIZE = 24;
+const BLOCK_SIZE = 20; // 20px per block fits standard mobile screens (200px width board)
 
 // 7 Tetrominoes with Mayan colors and textures
 const SHAPES = [
@@ -30,7 +33,7 @@ const SHAPES = [
   { shape: [[1, 1, 0], [0, 1, 1]], color: '#a855f7', secondary: '#7e22ce', name: 'Relámpago Z' },
 ];
 
-export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => {
+export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward, onVictory }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
@@ -38,6 +41,8 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [mathBonusActive, setMathBonusActive] = useState(false);
+  const [victoryCelebration, setVictoryCelebration] = useState(false);
+  const targetLinesForNode = node ? 4 : 999;
 
   // Sound generator using Web Audio API
   const playSound = useCallback((freq: number, type: OscillatorType = 'square', duration = 0.08) => {
@@ -54,7 +59,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
       osc.start();
       osc.stop(audioCtx.currentTime + duration);
     } catch {
-      // Audio might be blocked by browser policy until interaction
+      // Audio fallback
     }
   }, []);
 
@@ -96,6 +101,13 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
         if (piece.shape[r][c] && gridRef.current[piece.y + r]?.[piece.x + c]) {
           setGameOver(true);
           playSound(150, 'sawtooth', 0.4);
+
+          // If node was played and some lines were cleared, calculate result
+          if (node && onVictory) {
+            const earnedStars = score >= 800 ? 3 : score >= 400 ? 2 : 1;
+            const earnedCoins = earnedStars * 40 + (node.isBoss ? 80 : 30);
+            onVictory(earnedStars, earnedCoins);
+          }
           return false;
         }
       }
@@ -103,7 +115,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
 
     currentPieceRef.current = piece;
     return true;
-  }, [playSound]);
+  }, [playSound, node, onVictory, score]);
 
   const checkCollision = (pieceX: number, pieceY: number, shape: number[][]) => {
     for (let r = 0; r < shape.length; r++) {
@@ -132,23 +144,23 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
   };
 
   const handleRotate = useCallback(() => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || victoryCelebration) return;
     const piece = currentPieceRef.current;
     const rotated = rotate(piece.shape);
     if (!checkCollision(piece.x, piece.y, rotated)) {
       piece.shape = rotated;
       playSound(440, 'triangle');
     }
-  }, [gameOver, isPaused, playSound]);
+  }, [gameOver, isPaused, victoryCelebration, playSound]);
 
   const handleMove = useCallback((dx: number) => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || victoryCelebration) return;
     const piece = currentPieceRef.current;
     if (!checkCollision(piece.x + dx, piece.y, piece.shape)) {
       piece.x += dx;
       playSound(220, 'sine', 0.04);
     }
-  }, [gameOver, isPaused, playSound]);
+  }, [gameOver, isPaused, victoryCelebration, playSound]);
 
   const lockPiece = useCallback(() => {
     const piece = currentPieceRef.current;
@@ -176,7 +188,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
         colorsRef.current.splice(r, 1);
         gridRef.current.unshift(Array(COLS).fill(0));
         colorsRef.current.unshift(Array(COLS).fill(''));
-        r++; // Recheck same row index
+        r++;
       }
     }
 
@@ -184,40 +196,53 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
       playSound(520 + cleared * 120, 'square', 0.2);
       const points = [0, 100, 300, 500, 800][cleared] * level;
       setScore((s) => s + points);
-      setLines((l) => {
-        const total = l + cleared;
-        setLevel(Math.floor(total / 10) + 1);
-        return total;
+
+      setLines((prev) => {
+        const next = prev + cleared;
+        setLevel(Math.floor(next / 10) + 1);
+
+        // Check node challenge target
+        if (node && next >= targetLinesForNode && !victoryCelebration) {
+          setVictoryCelebration(true);
+          confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+          const earnedStars = 3;
+          const earnedCoins = 120 + (node.isBoss ? 80 : 0);
+          if (onVictory) onVictory(earnedStars, earnedCoins);
+          if (onReward) onReward(earnedCoins);
+        }
+
+        return next;
       });
 
       if (cleared >= 2) {
         setMathBonusActive(true);
         setTimeout(() => setMathBonusActive(false), 2500);
-        confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
       }
     }
 
-    spawnPiece();
-  }, [level, playSound, spawnPiece]);
+    if (!victoryCelebration) {
+      spawnPiece();
+    }
+  }, [level, node, onReward, onVictory, playSound, spawnPiece, targetLinesForNode, victoryCelebration]);
 
   const handleDrop = useCallback(() => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || victoryCelebration) return;
     const piece = currentPieceRef.current;
     if (!checkCollision(piece.x, piece.y + 1, piece.shape)) {
       piece.y += 1;
     } else {
       lockPiece();
     }
-  }, [gameOver, isPaused, lockPiece]);
+  }, [gameOver, isPaused, victoryCelebration, lockPiece]);
 
   const handleHardDrop = useCallback(() => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || victoryCelebration) return;
     const piece = currentPieceRef.current;
     while (!checkCollision(piece.x, piece.y + 1, piece.shape)) {
       piece.y += 1;
     }
     lockPiece();
-  }, [gameOver, isPaused, lockPiece]);
+  }, [gameOver, isPaused, victoryCelebration, lockPiece]);
 
   // Keyboard controls
   useEffect(() => {
@@ -232,15 +257,15 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleMove, handleDrop, handleRotate, handleHardDrop]);
 
-  // Main Game Loop (Gravity)
+  // Gravity Loop
   useEffect(() => {
-    if (gameOver || isPaused) return;
-    const speed = Math.max(120, 800 - (level - 1) * 70);
+    if (gameOver || isPaused || victoryCelebration) return;
+    const speed = Math.max(140, 750 - (level - 1) * 60);
     const interval = setInterval(() => {
       handleDrop();
     }, speed);
     return () => clearInterval(interval);
-  }, [gameOver, isPaused, level, handleDrop]);
+  }, [gameOver, isPaused, victoryCelebration, level, handleDrop]);
 
   // Canvas Render Loop
   useEffect(() => {
@@ -260,21 +285,21 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
 
       // Carved stone border
       ctx.strokeStyle = '#00000088';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(px + 1, py + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
 
-      // Inner Mayan glyph motif dot
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillRect(px + 5, py + 5, BLOCK_SIZE - 10, BLOCK_SIZE - 10);
+      // Inner glyph highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(px + 4, py + 4, BLOCK_SIZE - 8, BLOCK_SIZE - 8);
     };
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dark Temple Stone Grid Background
       ctx.fillStyle = '#141414';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Grid lines
       ctx.strokeStyle = '#222222';
       ctx.lineWidth = 1;
       for (let x = 0; x <= COLS; x++) {
@@ -290,7 +315,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
         ctx.stroke();
       }
 
-      // Draw locked board pieces
+      // Board blocks
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           if (gridRef.current[r][c]) {
@@ -299,9 +324,9 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
         }
       }
 
-      // Draw active falling piece
+      // Falling piece
       const piece = currentPieceRef.current;
-      if (piece) {
+      if (piece && !victoryCelebration) {
         for (let r = 0; r < piece.shape.length; r++) {
           for (let c = 0; c < piece.shape[r].length; c++) {
             if (piece.shape[r][c]) {
@@ -316,7 +341,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
 
     render();
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [victoryCelebration]);
 
   const restartGame = () => {
     gridRef.current = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
@@ -326,141 +351,166 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ onClose, onReward }) => 
     setLevel(1);
     setGameOver(false);
     setIsPaused(false);
+    setVictoryCelebration(false);
     spawnPiece();
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-4 px-2 space-y-4">
+    <div className="max-w-md sm:max-w-xl mx-auto px-2 py-3 space-y-3 pb-24">
       <GrecaBar />
 
-      {/* Header Bar */}
-      <div className="bg-[#1f1f1f] border-2 border-[#a62b2b] p-3 rounded-lg flex items-center justify-between shadow-lg">
+      {/* Top Header */}
+      <div className="bg-[#1e1916] border-2 border-[#a62b2b] p-2.5 rounded-lg flex items-center justify-between shadow-md">
         <button
           onClick={onClose}
-          className="px-3 py-1.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded font-silkscreen text-xs flex items-center gap-1.5 cursor-pointer"
+          className="px-2.5 py-1 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded font-silkscreen text-[11px] flex items-center gap-1 cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" /> Volver al Templo
+          <ArrowLeft className="w-3.5 h-3.5" /> Salir
         </button>
 
         <div className="text-center">
-          <h2 className="font-press-start text-xs sm:text-sm text-[#fbbf24]">
-            TETRIS MAYA · CÁLCULO DE MAZORCAS
+          <h2 className="font-press-start text-[11px] sm:text-xs text-[#fbbf24]">
+            {node ? node.title : 'TETRIS MAYA · MAZORCAS'}
           </h2>
-          <span className="font-silkscreen text-[11px] text-[#9ca3af]">
-            Apilamiento de bloques de estelas y tributo vigesimal
+          <span className="font-silkscreen text-[10px] text-[#a39c8f]">
+            {node ? `Objetivo: Limpiar ${targetLinesForNode} líneas` : 'Modo Freeplay'}
           </span>
         </div>
 
         <button
           onClick={restartGame}
-          className="p-1.5 bg-[#a62b2b] hover:bg-[#c0392b] text-[#f4efe6] rounded border border-[#d99b26] cursor-pointer"
+          className="p-1 bg-[#a62b2b] hover:bg-[#c0392b] text-white rounded border border-[#d99b26] cursor-pointer"
           title="Reiniciar"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Main Play Area */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-        {/* Left Side: Stats Panel */}
-        <div className="md:col-span-4 bg-[#1a1a1a] border-2 border-[#333] p-4 rounded-lg space-y-4 text-center">
-          <div className="p-3 bg-[#141414] border border-[#444] rounded">
-            <span className="font-silkscreen text-[10px] text-[#9ca3af] block">PUNTUACIÓN</span>
-            <span className="font-press-start text-base text-[#fbbf24]">{score}</span>
-          </div>
+      {/* Game Layout */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        {/* Board Canvas */}
+        <div className="relative border-2 sm:border-4 border-[#a62b2b] rounded-lg shadow-xl overflow-hidden bg-[#141414]">
+          <canvas
+            ref={canvasRef}
+            width={COLS * BLOCK_SIZE}
+            height={ROWS * BLOCK_SIZE}
+            className="block"
+          />
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="p-2.5 bg-[#141414] border border-[#444] rounded">
-              <span className="font-silkscreen text-[10px] text-[#9ca3af] block">LÍNEAS</span>
-              <span className="font-press-start text-xs text-[#22c55e]">{lines}</span>
-            </div>
-            <div className="p-2.5 bg-[#141414] border border-[#444] rounded">
-              <span className="font-silkscreen text-[10px] text-[#9ca3af] block">NIVEL</span>
-              <span className="font-press-start text-xs text-[#06b6d4]">{level}</span>
-            </div>
-          </div>
-
-          {mathBonusActive && (
-            <div className="p-2.5 bg-[#31250b] border-2 border-[#fbbf24] rounded animate-pulse flex items-center justify-center gap-1.5 text-xs font-press-start text-[#fbbf24]">
-              <Sparkles className="w-4 h-4" /> ¡BONO VIGESIMAL SOLAR!
+          {/* Victory Modal */}
+          {victoryCelebration && (
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-2">
+              <div className="text-3xl">👑</div>
+              <h3 className="font-press-start text-xs text-[#22c55e]">
+                ¡NODO SUPERADO!
+              </h3>
+              <p className="font-silkscreen text-[11px] text-[#f4efe6]">
+                Has tributado las mazorcas sagradas al templo.
+              </p>
+              <div className="flex items-center gap-1 text-[#fbbf24] py-1">
+                <Star className="w-4 h-4 fill-[#fbbf24]" />
+                <Star className="w-4 h-4 fill-[#fbbf24]" />
+                <Star className="w-4 h-4 fill-[#fbbf24]" />
+              </div>
+              <button
+                onClick={onClose}
+                className="px-3 py-1.5 bg-[#d99b26] text-black font-press-start text-[10px] rounded retro-button cursor-pointer"
+              >
+                CONTINUAR SENDA
+              </button>
             </div>
           )}
 
-          <div className="p-3 bg-[#241a15] border border-[#d99b26] rounded text-left font-silkscreen text-xs text-[#d1d5db] space-y-1">
-            <div className="text-[#fbbf24] font-bold">📜 REGLAS DEL TRIBUTO:</div>
-            <div>• Cada línea = 100 × Nivel</div>
-            <div>• 4 líneas juntas = 800 × Nivel</div>
-            <div>• Mazorcas acumuladas se convierten en Cacaos</div>
-          </div>
-        </div>
-
-        {/* Center: Canvas Board */}
-        <div className="md:col-span-8 flex flex-col items-center">
-          <div className="relative border-4 border-[#a62b2b] rounded-lg shadow-2xl overflow-hidden bg-[#141414]">
-            <canvas
-              ref={canvasRef}
-              width={COLS * BLOCK_SIZE}
-              height={ROWS * BLOCK_SIZE}
-              className="block"
-            />
-
-            {/* Game Over Modal */}
-            {gameOver && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
-                <div className="text-4xl">🗿</div>
-                <h3 className="font-press-start text-base text-[#ef4444]">
-                  ¡TEMPLO LLENO!
-                </h3>
-                <p className="font-silkscreen text-xs text-[#d1d5db]">
-                  Las estelas alcanzaron la cúspide de la pirámide.
-                </p>
-                <div className="font-press-start text-xs text-[#fbbf24]">
-                  PUNTOS TOTALES: {score}
-                </div>
+          {/* Game Over Modal */}
+          {gameOver && !victoryCelebration && (
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-3">
+              <div className="text-3xl">🗿</div>
+              <h3 className="font-press-start text-xs text-[#ef4444]">
+                ¡TEMPLO LLENO!
+              </h3>
+              <p className="font-silkscreen text-[11px] text-[#d1d5db]">
+                Puntos: {score} · Líneas: {lines}
+              </p>
+              <div className="flex gap-2">
                 <button
                   onClick={restartGame}
-                  className="px-4 py-2 bg-[#d99b26] text-black font-press-start text-xs rounded retro-button cursor-pointer"
+                  className="px-3 py-1 bg-[#d99b26] text-black font-press-start text-[10px] rounded retro-button cursor-pointer"
                 >
-                  JUGAR DE NUEVO
+                  REINTENTAR
+                </button>
+                <button
+                  onClick={onClose}
+                  className="px-3 py-1 bg-[#333] text-white font-press-start text-[10px] rounded cursor-pointer"
+                >
+                  VOLVER
                 </button>
               </div>
-            )}
+            </div>
+          )}
+        </div>
+
+        {/* Stats on Side / Bottom */}
+        <div className="w-full sm:w-44 flex flex-row sm:flex-col justify-around sm:justify-start gap-2 text-center">
+          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+            <span className="font-silkscreen text-[9px] text-[#8e8576] block">PUNTOS</span>
+            <span className="font-press-start text-xs text-[#fbbf24]">{score}</span>
           </div>
 
-          {/* On-Screen Mobile & Touch Controls */}
-          <div className="w-full max-w-xs mt-4 grid grid-cols-3 gap-2">
-            <button
-              onClick={() => handleMove(-1)}
-              className="p-3 bg-[#262626] hover:bg-[#333] border border-[#444] rounded text-center flex items-center justify-center font-press-start text-xs cursor-pointer active:translate-y-1"
-            >
-              <MoveLeft className="w-5 h-5 text-[#fbbf24]" />
-            </button>
-            <button
-              onClick={handleRotate}
-              className="p-3 bg-[#a62b2b] hover:bg-[#c0392b] border border-[#d99b26] rounded text-center flex items-center justify-center font-press-start text-xs cursor-pointer active:translate-y-1"
-            >
-              <RotateCw className="w-5 h-5 text-white" />
-            </button>
-            <button
-              onClick={() => handleMove(1)}
-              className="p-3 bg-[#262626] hover:bg-[#333] border border-[#444] rounded text-center flex items-center justify-center font-press-start text-xs cursor-pointer active:translate-y-1"
-            >
-              <MoveRight className="w-5 h-5 text-[#fbbf24]" />
-            </button>
-            <button
-              onClick={handleDrop}
-              className="col-span-2 p-2.5 bg-[#262626] hover:bg-[#333] border border-[#444] rounded text-center flex items-center justify-center font-silkscreen text-xs text-[#d1d5db] cursor-pointer active:translate-y-1"
-            >
-              <ArrowDown className="w-4 h-4 mr-1 text-[#22c55e]" /> Caída Suave
-            </button>
-            <button
-              onClick={handleHardDrop}
-              className="p-2.5 bg-[#14291c] hover:bg-[#1a3826] border border-[#22c55e] rounded text-center flex items-center justify-center font-silkscreen text-xs text-[#22c55e] cursor-pointer active:translate-y-1"
-            >
-              <Zap className="w-4 h-4" /> Caída
-            </button>
+          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+            <span className="font-silkscreen text-[9px] text-[#8e8576] block">LÍNEAS</span>
+            <span className="font-press-start text-xs text-[#22c55e]">
+              {lines} {node ? `/${targetLinesForNode}` : ''}
+            </span>
+          </div>
+
+          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+            <span className="font-silkscreen text-[9px] text-[#8e8576] block">NIVEL</span>
+            <span className="font-press-start text-xs text-[#06b6d4]">{level}</span>
           </div>
         </div>
+      </div>
+
+      {mathBonusActive && (
+        <div className="p-2 bg-[#2b200b] border border-[#fbbf24] rounded text-center text-[10px] font-press-start text-[#fbbf24] animate-pulse">
+          ✨ ¡BONIFICACIÓN SOLAR VIGESIMAL ACTIVADA!
+        </div>
+      )}
+
+      {/* Touch D-Pad for Mobile */}
+      <div className="w-full max-w-xs mx-auto grid grid-cols-3 gap-2 pt-1">
+        <button
+          onClick={() => handleMove(-1)}
+          className="h-12 bg-[#26201b] hover:bg-[#342b24] border border-[#4a3b2f] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          title="Izquierda"
+        >
+          <MoveLeft className="w-5 h-5 text-[#fbbf24]" />
+        </button>
+        <button
+          onClick={handleRotate}
+          className="h-12 bg-[#a62b2b] hover:bg-[#ba3232] border border-[#d99b26] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          title="Rotar"
+        >
+          <RotateCw className="w-5 h-5 text-white" />
+        </button>
+        <button
+          onClick={() => handleMove(1)}
+          className="h-12 bg-[#26201b] hover:bg-[#342b24] border border-[#4a3b2f] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          title="Derecha"
+        >
+          <MoveRight className="w-5 h-5 text-[#fbbf24]" />
+        </button>
+        <button
+          onClick={handleDrop}
+          className="col-span-2 h-11 bg-[#201b17] hover:bg-[#2e2620] border border-[#44362b] rounded flex items-center justify-center gap-1 font-silkscreen text-xs text-[#a39c8f] cursor-pointer active:translate-y-0.5"
+        >
+          <ArrowDown className="w-4 h-4 text-[#22c55e]" /> Caída Suave
+        </button>
+        <button
+          onClick={handleHardDrop}
+          className="h-11 bg-[#14291c] hover:bg-[#1f3d2a] border border-[#22c55e] rounded flex items-center justify-center font-silkscreen text-xs text-[#22c55e] cursor-pointer active:translate-y-0.5 font-bold"
+        >
+          <Zap className="w-4 h-4" /> Caída
+        </button>
       </div>
 
       <GrecaBar />
