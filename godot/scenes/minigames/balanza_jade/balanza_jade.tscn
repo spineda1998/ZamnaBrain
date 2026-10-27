@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://balanza_jade_32"]
+
+[ext_resource type="Script" path="res://scenes/minigames/balanza_jade/balanza_jade.gd" id="1_balanza"]
+
+[node name="BalanzaJade" type="Node2D"]
+script = ExtResource("1_balanza")

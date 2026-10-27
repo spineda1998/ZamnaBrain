@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://tetris_azteca_32"]
+
+[ext_resource type="Script" path="res://scenes/minigames/tetris_azteca/tetris_azteca.gd" id="1_tetris"]
+
+[node name="TetrisAzteca" type="Node2D"]
+script = ExtResource("1_tetris")
+
+[node name="BoardBackground" type="ColorRect" parent="."]
+offset_right = 320.0
+offset_bottom = 640.0
+color = Color(0.0470588, 0.0392157, 0.0431373, 1)
+
+[node name="BoardBorder" type="ReferenceRect" parent="."]
+offset_right = 320.0
+offset_bottom = 640.0
+border_color = Color(0.980392, 0.737255, 0.298039, 1)
+border_width = 2.0
+editor_only = false

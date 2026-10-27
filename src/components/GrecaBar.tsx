@@ -1,17 +1,39 @@
 import React from 'react';
 
-export const GrecaBar: React.FC<{ className?: string }> = ({ className = '' }) => {
+export interface GrecaBarProps {
+  className?: string;
+  height?: 'sm' | 'md';
+  animated?: boolean;
+}
+
+/**
+ * GrecaBar: Cenefa ceremonial con grecas mayas escalonadas (xicalcoliuhqui).
+ * Paleta oficial: #9E2A2B (Rojo Carmesí) y #FFFDF2 (Crema) / #2A7B4C (Verde Jade).
+ */
+export const GrecaBar: React.FC<GrecaBarProps> = ({
+  className = '',
+  height = 'md',
+  animated = true,
+}) => {
+  const hClass = height === 'sm' ? 'h-3' : 'h-4';
+  const svgH = height === 'sm' ? 'h-2.5' : 'h-3';
+
   return (
-    <div className={`w-full h-4 bg-[#a62b2b] flex items-center justify-center overflow-hidden select-none ${className}`}>
-      <div className="w-full flex justify-around items-center opacity-90">
-        {Array.from({ length: 12 }).map((_, i) => (
+    <div
+      className={`w-full ${hClass} bg-[#9E2A2B] flex items-center justify-center overflow-hidden select-none border-y border-[#4a1213] ${
+        animated ? 'animate-greca-arcade' : ''
+      } ${className}`}
+    >
+      <div className="w-full flex justify-around items-center px-1">
+        {Array.from({ length: 14 }).map((_, i) => (
           <svg
             key={i}
             viewBox="0 0 24 12"
-            className="h-3 w-6 fill-[#d99b26]"
+            className={`${svgH} w-5 shrink-0 fill-[#FFFDF2]`}
             preserveAspectRatio="none"
           >
-            <path d="M0 0h19.1v4h-9.55v4h9.55v4H0V0z" />
+            {/* Greca escalonada maya clásica */}
+            <path d="M0 0h20v3h-10v3h10v6H0v-3h15V6H0V0z" />
           </svg>
         ))}
       </div>

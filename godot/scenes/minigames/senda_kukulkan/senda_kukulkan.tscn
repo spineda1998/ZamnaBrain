@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://senda_kukulkan_32"]
+
+[ext_resource type="Script" path="res://scenes/minigames/senda_kukulkan/senda_kukulkan.gd" id="1_kukulkan"]
+
+[node name="SendaKukulkan" type="Node2D"]
+script = ExtResource("1_kukulkan")

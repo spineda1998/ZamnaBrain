@@ -1,0 +1,54 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Itzamna Academia"
+config/description="Academia Ceremonial Maya: Gamificacion matematica en Pixel Art SNES de 32x32 bits"
+config/version="1.0.0"
+run/main_scene="res://scenes/core/boot_splash.tscn"
+config/features=PackedStringArray("4.3", "Mobile")
+boot_splash/bg_color=Color(0.0156863, 0.0352941, 0.0784314, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+ApiClient="*res://scripts/core/api_client.gd"
+GameState="*res://scripts/core/game_state.gd"
+AudioManager="*res://scripts/core/audio_manager.gd"
+
+[display]
+
+window/size/viewport_width=384
+window/size/viewport_height=640
+window/size/window_width_override=768
+window/size/window_height_override=1280
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+window/handheld/orientation=1
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.web="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
+environment/defaults/default_clear_color=Color(0.0156863, 0.0352941, 0.0784314, 1)
+
+[gui]
+
+theme/default_font_antialiasing=0
+
+[editor]
+
+2d/grid/grid_size=32
+2d/grid/snap_step=Vector2(32, 32)

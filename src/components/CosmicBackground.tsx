@@ -9,10 +9,11 @@ export interface CosmicBackgroundProps {
 }
 
 /**
- * CosmicBackground: Fondo espacial Maya interactivo impulsado por un Shader WebGL.
- * Renderiza una galaxia espiral con dithering ordenado (matriz Bayer 4x4) y cuantización 100% pixel art.
- * Paleta ceremonial: Azul Maya profundo, destellos de Jade sagrado, Oro cósmico y Negro abisal.
- * Soporta modo 'dimmed' para el Feed principal (atenuado y oscurecido para máxima legibilidad).
+ * CosmicBackground: Fondo espacial Maya con shader WebGL.
+ * - Paleta oficial: #9E2A2B (Rojo Carmesí), #2A7B4C (Verde Jade), #FFFDF2 (Blanco Crema).
+ * - Galaxia espiral cósmica con la Pirámide Maya en medio.
+ * - Sin estrellas ni elementos satelitales dispersos.
+ * - Dithering ordenado Bayer 4x4 estilo hardware retro SNES.
  */
 export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
   className = '',
@@ -33,7 +34,6 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
     let program: WebGLProgram | null = null;
     let isDisposed = false;
 
-    // Obtener contexto WebGL
     try {
       gl =
         canvas.getContext('webgl', { alpha: false, antialias: false, powerPreference: 'high-performance' }) ||
@@ -75,7 +75,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
     window.addEventListener('resize', resize);
 
     if (gl) {
-      // Shaders WebGL
+      // Vertex Shader
       const vsSource = `
         attribute vec2 position;
         varying vec2 vUv;
@@ -85,8 +85,8 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
         }
       `;
 
-      // Fragment Shader: Galaxia Espiral con Dithering Ordenado Bayer 4x4
-      // Paleta: Azul Maya profundo + Jade sagrado + Oro cósmico + Negro abisal
+      // Fragment Shader: Galaxia Espiral con Pirámide Maya Central
+      // Paleta: #9E2A2B (Rojo Carmesí), #2A7B4C (Verde Jade), #FFFDF2 (Blanco Crema)
       const fsSource = `
         precision highp float;
         varying vec2 vUv;
@@ -95,17 +95,14 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
         uniform vec2 u_mouse;
         uniform float u_dimmed;
 
-        // Tamaño de bloque para pixel art nítido (4.0 pixeles de pantalla por pixel retro)
         const float PIXEL_SIZE = 4.0;
 
-        // Hash pseudoaleatorio
         float hash(vec2 p) {
           p = fract(p * vec2(123.34, 456.21));
           p += dot(p, p + 45.32);
           return fract(p.x * p.y);
         }
 
-        // Ruido de gradiente
         float noise(vec2 p) {
           vec2 i = floor(p);
           vec2 f = fract(p);
@@ -117,7 +114,6 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
           return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
         }
 
-        // Fractal Brownian Motion (FBM) para nebulosas galácticas
         float fbm(vec2 p) {
           float v = 0.0;
           float a = 0.5;
@@ -130,7 +126,7 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
           return v;
         }
 
-        // Matriz de Dithering Ordenado Bayer 4x4 (normalizada en rango [-0.5, 0.5])
+        // Matriz Bayer 4x4
         float bayer4(vec2 p) {
           vec2 b = mod(floor(p), 4.0);
           float v = 0.0;
@@ -155,135 +151,115 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
             else if (b.x < 2.5) v = 13.0;
             else v = 5.0;
           }
-          return (v + 0.5) / 16.0 - 0.5;
+          return (v + 0.5) / 16.0;
         }
 
-        // PALETAS CEREMONIALES AZUL MAYA & JADE
-        // 1. Vacío abisal cósmico
-        vec3 getAbyssalVoid(float t) {
-          if (t < 0.35) return vec3(0.015, 0.03, 0.06); // Negro azulado abisal
-          if (t < 0.70) return vec3(0.025, 0.05, 0.11); // Azul noche cósmico
-          return vec3(0.04, 0.08, 0.16);                // Azul maya umbrío
+        // Cuantización a 15-bit RGB555 hardware DAC
+        vec3 quantizeRGB555(vec3 c) {
+          return floor(clamp(c, 0.0, 1.0) * 31.0 + 0.5) / 31.0;
         }
 
-        // 2. Capa Azul Maya profundo y celestial
-        vec3 getMayaBluePalette(float v) {
-          if (v < 0.20) return vec3(0.05, 0.12, 0.24); // Azul cobalto profundo
-          if (v < 0.40) return vec3(0.08, 0.22, 0.42); // Azul maya clásico
-          if (v < 0.60) return vec3(0.12, 0.35, 0.60); // Azul maya sagrado
-          if (v < 0.80) return vec3(0.20, 0.50, 0.78); // Azul turquesa cósmico
-          if (v < 0.92) return vec3(0.38, 0.72, 0.92); // Azul cian celestial
-          return vec3(0.70, 0.90, 0.98);               // Brillo estelar maya
+        // Paleta oficial 16 niveles indexados:
+        // Tonos base: Fondo abisal (#100506) -> Rojo Carmesí (#9E2A2B) -> Verde Jade (#2A7B4C) -> Crema (#FFFDF2)
+        vec3 getTriadPalette(float level, float dimmed) {
+          float idx = floor(clamp(level, 0.0, 1.0) * 15.0 + 0.5);
+          vec3 c;
+
+          // 0..3: Vacío cósmico y rojos oscuros
+          if (idx <= 0.0) c = vec3(0.063, 0.020, 0.024);      // #100506 Abisal Carmesí
+          else if (idx <= 1.0) c = vec3(0.125, 0.035, 0.043); // #20090b Carmesí muy oscuro
+          else if (idx <= 2.0) c = vec3(0.247, 0.067, 0.078); // #3f1114 Carmesí profundo
+          else if (idx <= 3.0) c = vec3(0.388, 0.102, 0.114); // #631a1d Carmesí medio
+          // 4..7: Transición a Rojo Carmesí Canónico #9E2A2B (0.620, 0.165, 0.169)
+          else if (idx <= 4.0) c = vec3(0.510, 0.137, 0.149); // #822326 Carmesí claro
+          else if (idx <= 5.0) c = vec3(0.620, 0.165, 0.169); // #9E2A2B ROJO CARMESÍ OFICIAL
+          else if (idx <= 6.0) c = vec3(0.482, 0.267, 0.208); // #7b4435 Transición Carmesí-Jade
+          else if (idx <= 7.0) c = vec3(0.322, 0.376, 0.251); // #526040 Transición intermedia
+          // 8..11: Verde Jade Canónico #2A7B4C (0.165, 0.482, 0.298)
+          else if (idx <= 8.0) c = vec3(0.165, 0.482, 0.298); // #2A7B4C VERDE JADE OFICIAL
+          else if (idx <= 9.0) c = vec3(0.235, 0.596, 0.373); // #3c985f Jade resplandeciente
+          else if (idx <= 10.0) c = vec3(0.345, 0.718, 0.478);// #58b77a Jade luminoso
+          else if (idx <= 11.0) c = vec3(0.533, 0.816, 0.635);// #88d0a2 Jade pálido
+          // 12..15: Ascenso a Crema Sagrado #FFFDF2 (1.0, 0.992, 0.949)
+          else if (idx <= 12.0) c = vec3(0.780, 0.902, 0.804);// #c7e6cd Brillo crema-jade
+          else if (idx <= 13.0) c = vec3(0.922, 0.949, 0.867);// #ebf2dd Resplandor celestial
+          else if (idx <= 14.0) c = vec3(0.980, 0.973, 0.910);// #faf8e8 Luz solar
+          else c = vec3(1.000, 0.992, 0.949);                 // #FFFDF2 BLANCO CREMA OFICIAL
+
+          if (dimmed > 0.5) {
+            c = mix(c, vec3(0.063, 0.020, 0.024), 0.58);
+          }
+          return quantizeRGB555(c);
         }
 
-        // 3. Destellos de Jade sagrado mesoamericano
-        vec3 getJadePalette(float v) {
-          if (v < 0.25) return vec3(0.03, 0.18, 0.14); // Jade abisal
-          if (v < 0.50) return vec3(0.06, 0.32, 0.24); // Jade profundo
-          if (v < 0.75) return vec3(0.12, 0.55, 0.38); // Jade esmeralda
-          if (v < 0.90) return vec3(0.24, 0.78, 0.52); // Jade luminoso
-          return vec3(0.55, 0.94, 0.76);               // Menta jade celestial
-        }
+        // Pirámide Maya Escalonada (Templo de Kukulcán) en el centro de la pantalla
+        float getCenterPyramid(vec2 p) {
+          // Escalar y centrar
+          vec2 lp = p * 6.5;
+          float y = lp.y + 0.65;
+          float x = abs(lp.x);
+          if (y < 0.0 || y > 1.85 || x > 1.85) return 0.0;
 
-        // 4. Oro cósmico y núcleo estelar
-        vec3 getGoldPalette(float v) {
-          if (v < 0.30) return vec3(0.40, 0.20, 0.05); // Ámbar ritual sombra
-          if (v < 0.60) return vec3(0.75, 0.45, 0.10); // Oro maya
-          if (v < 0.85) return vec3(0.95, 0.72, 0.25); // Oro solar Kinich Ahau
-          return vec3(1.00, 0.95, 0.65);               // Núcleo blanco-dorado
+          // Escalones / niveles de la pirámide
+          float tier = floor(y * 2.8);
+          float maxW = 1.70 - tier * 0.32;
+          if (x > maxW) return 0.0;
+
+          // Escalinata central sagrada
+          float stair = (x < 0.22) ? 0.35 : 0.0;
+          // Templo en la cúspide
+          float temple = (tier >= 4.0) ? 0.40 : 0.0;
+          // Bordes de los peldaños
+          float edge = (fract(y * 2.8) > 0.68) ? 0.25 : 0.0;
+
+          return clamp(0.65 + stair + temple + edge, 0.0, 1.0);
         }
 
         void main() {
-          // 1. CUANTIZACIÓN ESPACIAL EN CUADRÍCULA PIXEL ART RETRO
           vec2 retroPixelCoord = floor(gl_FragCoord.xy / PIXEL_SIZE);
           vec2 snappedFragCoord = (retroPixelCoord + 0.5) * PIXEL_SIZE;
           vec2 uv = (snappedFragCoord - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
 
-          // Inclinación sutil con el ratón
-          vec2 m = (u_mouse - 0.5) * 0.22;
-          uv += m * 0.15;
+          // Movimiento de mouse interactivo suave
+          vec2 m = (u_mouse - 0.5) * 0.12;
+          uv += m * 0.08;
 
-          float t = u_time * 0.11;
+          float t = u_time * 0.12;
 
-          // Coordenadas polares para la Espiral Galáctica Maya
-          float r = length(uv);
-          float angle = atan(uv.y, uv.x);
+          // 1. GALAXIA ESPIRAL
+          vec2 compactUv = uv * 2.4;
+          float r = length(compactUv);
+          float angle = atan(compactUv.y, compactUv.x);
 
-          // Espiral cósmica
-          float spiralAngle = angle + r * 3.5 - t * 0.35;
-          vec2 spiralUv = vec2(cos(spiralAngle), sin(spiralAngle)) * r;
+          float spiralAngle = angle + r * 3.4 - t * 0.32;
+          vec2 spiralCoord = vec2(cos(spiralAngle), sin(spiralAngle)) * r;
 
-          // Capas procedurales de nebulosa FBM
-          float n1 = fbm(spiralUv * 2.5 + vec2(t * 0.2, -t * 0.14));
-          float n2 = fbm(uv * 2.8 - vec2(t * 0.09, t * 0.07) + n1 * 1.2);
-          float n3 = fbm(spiralUv * 5.0 + n2 * 0.7);
+          float n1 = fbm(spiralCoord * 2.6 + vec2(t * 0.20, -t * 0.12));
+          float n2 = fbm(compactUv * 3.0 - vec2(t * 0.08, t * 0.06) + n1 * 1.0);
+          float n3 = fbm(spiralCoord * 5.0 + n2 * 0.5);
 
-          // Brazos espirales y núcleo cósmico
-          float spiralArmMask = pow(smoothstep(0.24, 0.76, n1 * 0.62 + n2 * 0.48), 1.5);
-          float coreDist = length(uv);
-          float coreGlow = exp(-coreDist * 2.8);
+          float armCore = cos(spiralAngle * 2.0);
+          float armStrength = clamp((armCore * 0.5 + 0.5) * n1 * 1.2 + pow(n2, 1.8) * 0.7 + pow(n3, 2.0) * 0.35, 0.0, 1.0);
 
-          // Componentes continuos
-          float rawBlue = clamp((spiralArmMask * 1.15 + pow(n2, 1.7) * 0.75 + pow(n3, 2.4) * 0.4) * (1.1 - coreDist * 0.3), 0.0, 1.0);
-          float rawJade = clamp((pow(n1 * n2, 1.8) * 1.35 + pow(n3, 3.0) * 0.8) * (1.2 - coreDist * 0.4), 0.0, 1.0);
-          float rawGold = clamp(coreGlow * 1.25 + pow(n2 * n3, 2.3) * 1.2 + exp(-coreDist * 6.5) * 1.6, 0.0, 1.0);
+          float coreGlow = clamp(1.0 - r * 2.5, 0.0, 1.0);
+          float coreIntense = clamp(1.0 - r * 4.8, 0.0, 1.0);
+          float galaxyFalloff = clamp(1.0 - r * 0.95, 0.0, 1.0);
 
-          // 2. DITHERING ORDENADO BAYER 4x4
-          float dither = bayer4(retroPixelCoord);
-          float ditherStrength = 0.22;
+          float centralGalaxy = (armStrength * 0.75 + coreGlow * 0.85 + coreIntense * 0.60 + n2 * 0.18) * galaxyFalloff;
 
-          float ditheredBlue = clamp(rawBlue + dither * ditherStrength, 0.0, 1.0);
-          float ditheredJade = clamp(rawJade + dither * (ditherStrength * 1.05), 0.0, 1.0);
-          float ditheredGold = clamp(rawGold + dither * (ditherStrength * 1.1), 0.0, 1.0);
+          // 2. PIRÁMIDE MAYA ESCALONADA EN EL CENTRO EXACTO DE LA GALAXIA
+          float pyramidIntensity = getCenterPyramid(uv);
 
-          // Fondo abisal con dithering ordenado
-          float bgDither = clamp((length(uv) * 0.42 + n1 * 0.2) + dither * 0.16, 0.0, 1.0);
-          vec3 col = getAbyssalVoid(bgDither);
+          // 3. COMBINAR GALAXIA + PIRÁMIDE CENTRAL
+          float rawIntensity = clamp(centralGalaxy * 0.75 + pyramidIntensity * 0.95, 0.0, 1.0);
 
-          // Mezclar Azul Maya
-          if (ditheredBlue > 0.14) {
-            vec3 blueColor = getMayaBluePalette(ditheredBlue);
-            col = mix(col, blueColor, smoothstep(0.14, 0.38, ditheredBlue));
-          }
+          // 4. MATRIZ DE DITHERING ORDENADO BAYER 4x4 SNES
+          float bayerVal = bayer4(retroPixelCoord);
+          float ditherOffset = (bayerVal - 0.5) * 0.28;
+          float steppedLevel = clamp(rawIntensity + ditherOffset, 0.0, 1.0);
 
-          // Destellos de Jade sagrado
-          if (ditheredJade > 0.22) {
-            vec3 jadeColor = getJadePalette(ditheredJade);
-            col = mix(col, jadeColor, smoothstep(0.22, 0.55, ditheredJade) * 0.85);
-          }
-
-          // Oro cósmico central y filamentos
-          if (ditheredGold > 0.30) {
-            vec3 goldColor = getGoldPalette(ditheredGold);
-            col = mix(col, goldColor, smoothstep(0.30, 0.65, ditheredGold) * 0.90);
-          }
-
-          // 3. ESTRELLAS PIXEL ART (Tzab-ek / Pléyades mesoamericanas)
-          float starSeed = hash(retroPixelCoord);
-          float starThreshold = u_dimmed > 0.5 ? 0.990 : 0.984; // Menos estrellas si está atenuado
-          if (starSeed > starThreshold) {
-            float twinkle = 0.5 + 0.5 * sin(u_time * (3.0 + starSeed * 10.0) + starSeed * 25.0);
-            if (twinkle > 0.42) {
-              if (starSeed > 0.994) {
-                col = vec3(0.95, 0.98, 1.0); // Estrella azul-blanco
-              } else if (starSeed > 0.989) {
-                col = vec3(0.45, 0.92, 0.75); // Estrella jade
-              } else {
-                col = vec3(0.98, 0.82, 0.40); // Estrella oro maya
-              }
-            }
-          }
-
-          // Viñeta retro suave en los extremos
-          float vignette = smoothstep(1.35, 0.35, length(uv));
-          if (vignette < 0.88 + dither * 0.08) {
-            col *= 0.82;
-          }
-
-          // 4. ATENUACIÓN Y OSCURECIDO PARA FEED (PRIORIZA LEGIBILIDAD)
-          if (u_dimmed > 0.5) {
-            col = col * 0.42 + vec3(0.015, 0.025, 0.045) * 0.58;
-          }
+          // 5. PALETA OFICIAL #9E2A2B / #2A7B4C / #FFFDF2 (SIN ESTRELLAS)
+          vec3 col = getTriadPalette(steppedLevel, u_dimmed);
 
           gl_FragColor = vec4(col, 1.0);
         }
@@ -313,7 +289,8 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
           gl.linkProgram(program);
 
           if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.warn('CosmicBackground Program link failed:', gl.getProgramInfoLog(program));
+            console.warn('Program link failed:', gl.getProgramInfoLog(program));
+            gl.deleteProgram(program);
             program = null;
           }
         }
@@ -322,81 +299,83 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
       if (program) {
         gl.useProgram(program);
 
-        // Geometría del Quad de pantalla completa
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        const positions = new Float32Array([
-          -1, -1,
-           1, -1,
-          -1,  1,
-          -1,  1,
-           1, -1,
-           1,  1,
-        ]);
+        const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
         gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-        const positionLocation = gl.getAttribLocation(program, 'position');
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        const posAttr = gl.getAttribLocation(program, 'position');
+        gl.enableVertexAttribArray(posAttr);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
 
-        const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-        const timeLocation = gl.getUniformLocation(program, 'u_time');
-        const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
-        const dimmedLocation = gl.getUniformLocation(program, 'u_dimmed');
+        const uRes = gl.getUniformLocation(program, 'u_resolution');
+        const uTime = gl.getUniformLocation(program, 'u_time');
+        const uMouse = gl.getUniformLocation(program, 'u_mouse');
+        const uDimmed = gl.getUniformLocation(program, 'u_dimmed');
 
-        const startTime = performance.now();
+        let startTime = performance.now();
 
-        const render = (now: number) => {
-          if (isDisposed || !gl || !program) return;
+        const render = () => {
+          if (isDisposed) return;
 
-          // Suavizado del ratón
           mouseX += (targetMouseX - mouseX) * 0.05;
           mouseY += (targetMouseY - mouseY) * 0.05;
 
-          const elapsedTime = ((now - startTime) / 1000) * speed;
+          const now = performance.now();
+          const elapsed = ((now - startTime) / 1000) * speed;
 
-          gl.useProgram(program);
-          gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-          gl.uniform1f(timeLocation, elapsedTime);
-          gl.uniform2f(mouseLocation, mouseX, mouseY);
-          gl.uniform1f(dimmedLocation, isDimmed ? 1.0 : 0.0);
+          gl!.useProgram(program!);
+          gl!.uniform2f(uRes, canvas.width, canvas.height);
+          gl!.uniform1f(uTime, elapsed);
+          gl!.uniform2f(uMouse, mouseX, mouseY);
+          gl!.uniform1f(uDimmed, isDimmed ? 1.0 : 0.0);
 
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          gl!.drawArrays(gl!.TRIANGLES, 0, 6);
 
           animationFrameId = requestAnimationFrame(render);
         };
 
-        animationFrameId = requestAnimationFrame(render);
+        render();
       }
     } else {
-      // Fallback en Canvas 2D en caso de que WebGL no esté disponible
+      // 2D Canvas Fallback si WebGL no está disponible
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        let frame = 0;
+        let startTime = performance.now();
         const render2D = () => {
           if (isDisposed) return;
-          frame++;
-          ctx.fillStyle = isDimmed ? '#050c18' : '#07162c';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          const w = canvas.width;
+          const h = canvas.height;
+          const t = ((performance.now() - startTime) / 1000) * speed;
 
-          // Nebulosa simple simulada
-          const gradient = ctx.createRadialGradient(
-            canvas.width * 0.5,
-            canvas.height * 0.5,
-            10,
-            canvas.width * 0.5,
-            canvas.height * 0.5,
-            canvas.width * 0.6
-          );
-          gradient.addColorStop(0, isDimmed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(21, 84, 140, 0.4)');
-          gradient.addColorStop(0.5, isDimmed ? 'rgba(10, 37, 64, 0.2)' : 'rgba(15, 118, 110, 0.3)');
-          gradient.addColorStop(1, 'rgba(2, 6, 23, 0.95)');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          // Fondo oscuro carmesí
+          ctx.fillStyle = '#100506';
+          ctx.fillRect(0, 0, w, h);
+
+          // Galaxia central
+          const cx = w / 2;
+          const cy = h / 2;
+          const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.min(w, h) * 0.45);
+          grad.addColorStop(0, '#FFFDF2');
+          grad.addColorStop(0.3, '#2A7B4C');
+          grad.addColorStop(0.7, '#9E2A2B');
+          grad.addColorStop(1, '#100506');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(cx, cy, Math.min(w, h) * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pirámide central en 2D pixel art
+          ctx.fillStyle = '#9E2A2B';
+          ctx.fillRect(cx - 30, cy + 10, 60, 20);
+          ctx.fillRect(cx - 20, cy - 5, 40, 15);
+          ctx.fillRect(cx - 10, cy - 18, 20, 13);
+          ctx.fillStyle = '#FFFDF2';
+          ctx.fillRect(cx - 5, cy - 25, 10, 7);
 
           animationFrameId = requestAnimationFrame(render2D);
         };
-        animationFrameId = requestAnimationFrame(render2D);
+        render2D();
       }
     }
 
@@ -415,11 +394,11 @@ export const CosmicBackground: React.FC<CosmicBackgroundProps> = ({
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 w-full h-full pointer-events-none -z-10 ${className}`}
+      className={`fixed inset-0 w-full h-full pointer-events-none -z-10 [image-rendering:pixelated] ${className}`}
       style={{
         imageRendering: 'pixelated',
+        backgroundColor: '#100506',
       }}
-      aria-hidden="true"
     />
   );
 };

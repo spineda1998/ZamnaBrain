@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { api } from '../api';
 import { User } from '../types';
 import { PixelArtSpinner } from './PixelArtSpinner';
-import { CosmicBackground } from './CosmicBackground';
-import { DeityAxolotl } from './DeityAxolotl';
+import { ItzamnaTitle } from './ItzamnaTitle';
+import { GrecaBar } from './GrecaBar';
 import { AlertCircle } from 'lucide-react';
 
 interface LoginModalProps {
@@ -30,20 +30,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
 
       // Credenciales demostrativas requeridas
       if (cleanEmail === 'miguelito@alumno.com' && cleanPassword === '12345678') {
-        const dummyUser: User = {
-          id: 'u_miguelito',
-          email: 'miguelito@alumno.com',
-          nickname: 'MIGUELITO',
-          role: 'student',
-          avatar: '🦅',
-          difficulty: 'aprendiz',
-          language: 'es',
-        };
-        api.setToken('dummy_token_miguelito');
-        localStorage.setItem('zuma_user_nickname', 'MIGUELITO');
-        localStorage.setItem('zuma_user_avatar', '🦅');
-        onSuccess(dummyUser);
-        return;
+        try {
+          const res = await api.login(cleanEmail, cleanPassword);
+          localStorage.setItem('zuma_user_nickname', 'MIGUELITO');
+          localStorage.setItem('zuma_user_avatar', '🦅');
+          onSuccess(res.user);
+          return;
+        } catch {
+          const dummyUser: User = {
+            id: 'u_miguelito',
+            email: 'miguelito@alumno.com',
+            nickname: 'MIGUELITO',
+            role: 'student',
+            avatar: '🦅',
+            difficulty: 'aprendiz',
+            language: 'es',
+          };
+          api.setToken('dummy_token_miguelito');
+          localStorage.setItem('zuma_user_nickname', 'MIGUELITO');
+          localStorage.setItem('zuma_user_avatar', '🦅');
+          onSuccess(dummyUser);
+          return;
+        }
       }
 
       // Fallback intentando api backend si está disponible
@@ -62,105 +70,77 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
     }
   };
 
-  // Maya Greca Vector SVG Pattern
-  const renderMayaGrecaSVG = () => (
-    <div
-      data-pencil-name="SVG"
-      className="box-border w-full shrink-0 h-[12px] overflow-hidden relative flex justify-center items-center"
-    >
-      <svg
-        data-pencil-name="Vector"
-        viewBox="0 0 377.2250061035156 12"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="box-border w-full max-w-[420px] h-[12px] overflow-visible"
-      >
-        <path
-          d="M0 0l19.1 0 0 4-9.55 0 0 4 9.55 0 0 4-19.1 0 0-12 0 0m23.875 0l19.1 0 0 4-9.55 0 0 4 9.55 0 0 4-19.1 0 0-12 0 0m23.875 0l19.1 0 0 4-9.55 0 0 4 9.55 0 0 4-19.1 0 0-12 0 0m23.875 0l19.1 0 0 4-9.55 0 0 4 9.55 0 0 4-19.1 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.55001 0 0 4 9.55001 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.54999 0 0 4 9.54999 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.54999 0 0 4 9.54999 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.54999 0 0 4 9.54999 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.54999 0 0 4 9.54999 0 0 4-19.10001 0 0-12 0 0m23.875 0l19.10001 0 0 4-9.54999 0 0 4 9.54999 0 0 4-19.10001 0 0-12 0 0"
-          fill="#d99b26d9"
-        />
-      </svg>
-    </div>
-  );
+  const handleSocialLogin = async (provider: 'Google' | 'Apple' | 'Discord') => {
+    setError(null);
+    setLoading(true);
+    try {
+      await new Promise((r) => setTimeout(r, 650));
+      const profileMap: Record<string, { email: string; nickname: string; avatar: string }> = {
+        Google: {
+          email: 'alumno.maya@google.academiamaya.edu',
+          nickname: 'KUKUL G-PILOT',
+          avatar: 'quetzal',
+        },
+        Apple: {
+          email: 'itzamna.student@apple.icloud.edu',
+          nickname: 'BALAM APPLE',
+          avatar: 'jaguar',
+        },
+        Discord: {
+          email: 'cuetzpalin@discord.guild.edu',
+          nickname: 'AXOLOTL DISCORD',
+          avatar: 'axolotl',
+        },
+      };
+
+      const prof = profileMap[provider];
+      const dummyUser: User = {
+        id: `social_${provider.toLowerCase()}_${Date.now()}`,
+        email: prof.email,
+        nickname: prof.nickname,
+        avatar: prof.avatar,
+        role: 'student',
+      };
+
+      api.setToken(`token_${provider.toLowerCase()}_ritual`);
+      localStorage.setItem('zuma_user_nickname', prof.nickname);
+      localStorage.setItem('zuma_user_avatar', prof.avatar);
+      onSuccess(dummyUser);
+    } catch (err: any) {
+      setError(`Error al autenticar con ${provider}: ${err?.message || 'Intenta de nuevo'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto bg-[#0a0a0ff0]">
-      {/* SHADER CÓSMICO DE FONDO: GALAXIA MAYA CON AZUL MAYA, JADE, ORO Y DITHERING BAYER */}
-      <CosmicBackground speed={1.0} interactive={true} variant="vibrant" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto bg-transparent">
+      {/* PANTALLA DE CARGA DEL SISTEMA CON SPINNER LOGOTIPO DE ITZAMNÁ (CUANDO LOADING = TRUE) */}
+      {loading && (
+        <div className="fixed inset-0 z-[100] bg-[#040913]/92 flex flex-col items-center justify-center p-4 animate-in fade-in duration-150">
+          <PixelArtSpinner size="lg" message="AUTENTICANDO EN ITZAMNÁ ACADEMIA..." />
+        </div>
+      )}
 
-      {/* Subtle CRT scanline overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20 z-0"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%)',
-          backgroundSize: '100% 4px',
-        }}
-      />
-
-      {/* CONTENEDOR PRINCIPAL: SCREEN DEL SISTEMA DE DISEÑO */}
+      {/* CONTENEDOR PRINCIPAL: SCREEN 100% TRANSPARENTE SIN ELEMENTOS GLASS NI BLUR */}
       <div
         data-pencil-name="Main Menu | Screen"
-        className="relative z-10 box-border w-full max-w-[440px] min-h-[100dvh] md:min-h-[920px] md:h-[956px] bg-[#1a1a1acc] backdrop-blur-md overflow-hidden flex flex-col justify-between items-center shadow-[0_0_50px_rgba(0,0,0,0.9),0_0_30px_rgba(27,77,62,0.4)] border-x border-[#33333366]"
+        className="relative z-10 box-border w-full max-w-[440px] min-h-[100dvh] md:min-h-[920px] md:h-[956px] bg-transparent overflow-hidden flex flex-col justify-between items-center"
       >
-        {/* GRECA MAYA SUPERIOR */}
-        <div
-          data-pencil-name="Greca Maya"
-          className="box-border w-full h-[16px] shrink-0 flex flex-row gap-0 justify-center items-center bg-[#a62b2bff] overflow-hidden z-10 shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-        >
-          {renderMayaGrecaSVG()}
-        </div>
+        {/* GRECA MAYA SUPERIOR ANIMADA */}
+        <GrecaBar height="md" animated={true} className="z-10 shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
 
         {/* CONTENIDO CENTRAL */}
         <div className="w-full flex-1 flex flex-col items-center justify-center px-4 py-8 relative z-10">
-          {/* HERO SECTION: Medallion & 3D Arcade Title */}
+          {/* HERO SECTION: Medallion & SNES Dithered Arcade Title */}
           <div
             data-pencil-name="HERO SECTION: Medallion & 3D Arcade Title"
             className="box-border w-full h-fit shrink-0 flex flex-col gap-0 justify-start items-center mb-4"
           >
-            <div
-              data-pencil-name="Main Arcade Title (Inspired by Pixel Paragons & Pixeria references)"
-              className="box-border w-fit h-fit shrink-0 flex flex-col gap-0 justify-start items-center"
-            >
-              <div
-                data-pencil-name="Heading 1 - Dual Sword / Glyphic Header Accents"
-                className="box-border w-fit h-fit shrink-0 [filter:drop-shadow(0px_3px_0px_#4a0909)] flex flex-col gap-0 justify-start items-center"
-              >
-                <div
-                  data-pencil-name="Text"
-                  className="text-[24px]/[32px] box-border font-['Press_Start_2P',system-ui,sans-serif] font-normal tracking-[1.2px] text-center [white-space:nowrap]"
-                  style={{
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    backgroundImage: 'linear-gradient(180deg, #ffe5a3ff 0%, #fabc4cff 50%, #a62b2bff 100%)',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '100% 100%',
-                    color: 'transparent',
-                  }}
-                >
-                  ITZAMNA
-                </div>
-              </div>
-              <div data-pencil-name="Margin" className="box-border w-[82.5px] h-[14.5px] shrink-0 relative">
-                <div
-                  data-pencil-name="Shadow"
-                  className="box-border w-[82.5px] h-[16.5px] [filter:drop-shadow(0px_2px_0px_#05363d)] absolute left-0 top-[-2px] [z-index:0]"
-                >
-                  <div
-                    data-pencil-name="Text"
-                    className="text-[11px]/[17px] box-border absolute left-[-13.75px] top-0 text-[#76d4e4ff] font-['Press_Start_2P',system-ui,sans-serif] font-normal tracking-[2.75px] text-center [white-space:nowrap] [z-index:0]"
-                  >
-                    ACADEMIA
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ItzamnaTitle size="lg" className="drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" />
           </div>
 
-          {/* MESOBRAIN DEITY AXOLOTL */}
-          <div className="mb-6 flex items-center justify-center">
-            <DeityAxolotl size={168} />
-          </div>
 
           {/* FORMULARIO TIPO CÓDICE / TABLILLA DE ARCILLA */}
           <div
@@ -297,24 +277,77 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
                   </div>
                 </div>
 
-                {/* BOTÓN PRINCIPAL DE COMBATE: ROJO CINABRIO Y ORO */}
+                {/* BOTÓN PRINCIPAL: INICIAR SESIÓN */}
                 <button
                   type="submit"
                   disabled={loading}
-                  data-pencil-name="Button - BOTÓN PRINCIPAL DE COMBATE: ROJO CINABRIO"
+                  data-pencil-name="Button - INICIAR SESIÓN"
                   className="box-border w-full h-[46px] shrink-0 [box-shadow:4px_4px_0px_#0e0a0b,_inset_-2px_-2px_0px_#530e0b,_inset_2px_2px_0px_#e44a3e] flex flex-row gap-0 p-[12px_0px] justify-center items-center bg-[#d48925ff] hover:bg-[#e29932] active:translate-y-0.5 active:[box-shadow:2px_2px_0px_#0e0a0b] [border:1px_solid_#d99b2666] cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                 >
-                  {loading ? (
-                    <PixelArtSpinner size="sm" inline={true} message="INICIANDO..." />
-                  ) : (
-                    <div
-                      data-pencil-name="Iniciar sesiON"
-                      className="text-[11px]/[17px] box-border text-[#fdf8eeff] font-['Press_Start_2P',system-ui,sans-serif] font-normal tracking-[0.55px] text-center uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                    >
-                      Iniciar sesión
-                    </div>
-                  )}
+                  <div
+                    data-pencil-name="Iniciar sesión"
+                    className="text-[11px]/[17px] box-border text-[#fdf8eeff] font-['Press_Start_2P',system-ui,sans-serif] font-normal tracking-[0.55px] text-center uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                  >
+                    {loading ? 'INICIANDO...' : 'Iniciar sesión'}
+                  </div>
                 </button>
+
+                {/* SEPARADOR GLÍFICO */}
+                <div className="w-full flex items-center justify-between my-1 gap-2">
+                  <div className="h-[1px] flex-1 bg-[#d99b2666]" />
+                  <span className="text-[7.5px] font-['Press_Start_2P',sans-serif] text-[#f9c852cc] tracking-widest uppercase">
+                    O CONECTA CON
+                  </span>
+                  <div className="h-[1px] flex-1 bg-[#d99b2666]" />
+                </div>
+
+                {/* BOTONES SECUNDARIOS DE AUTENTICACIÓN: GOOGLE, APPLE, DISCORD */}
+                <div className="w-full grid grid-cols-3 gap-2">
+                  {/* Google */}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleSocialLogin('Google')}
+                    title="Iniciar sesión con Google"
+                    className="h-9 px-1.5 bg-[#1f1917] hover:bg-[#2b221f] active:translate-y-0.5 [box-shadow:2px_2px_0px_#0e0a0b,_inset_1px_1px_0px_#ffffff22] border border-[#fabc4c55] rounded-[2px] flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                      <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                      <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+                      <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z" />
+                    </svg>
+                    <span className="font-['Press_Start_2P',sans-serif] text-[7px] text-[#ffe5a3]">Google</span>
+                  </button>
+
+                  {/* Apple */}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleSocialLogin('Apple')}
+                    title="Iniciar sesión con Apple"
+                    className="h-9 px-1.5 bg-[#1f1917] hover:bg-[#2b221f] active:translate-y-0.5 [box-shadow:2px_2px_0px_#0e0a0b,_inset_1px_1px_0px_#ffffff22] border border-[#fabc4c55] rounded-[2px] flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0 fill-[#f4efe6]" viewBox="0 0 24 24">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.38c.62-.75 1.04-1.8 0.93-2.85-.9.04-1.99.6-2.63 1.35-.57.65-1.06 1.72-.93 2.74 1.01.08 2.03-.5 2.63-1.24z" />
+                    </svg>
+                    <span className="font-['Press_Start_2P',sans-serif] text-[7px] text-[#ffe5a3]">Apple</span>
+                  </button>
+
+                  {/* Discord */}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleSocialLogin('Discord')}
+                    title="Iniciar sesión con Discord"
+                    className="h-9 px-1.5 bg-[#1f1917] hover:bg-[#2b221f] active:translate-y-0.5 [box-shadow:2px_2px_0px_#0e0a0b,_inset_1px_1px_0px_#ffffff22] border border-[#73c2fb66] rounded-[2px] flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0 fill-[#73c2fb]" viewBox="0 0 24 24">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                    </svg>
+                    <span className="font-['Press_Start_2P',sans-serif] text-[7px] text-[#73c2fb]">Discord</span>
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -327,13 +360,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
           </div>
         </div>
 
-        {/* GRECA MAYA INFERIOR */}
-        <div
-          data-pencil-name="Greca Maya"
-          className="box-border w-full h-[16px] shrink-0 flex flex-row gap-0 justify-center items-center bg-[#a62b2bff] overflow-hidden z-10 shadow-[0_-2px_4px_rgba(0,0,0,0.5)]"
-        >
-          {renderMayaGrecaSVG()}
-        </div>
+        {/* GRECA MAYA INFERIOR ANIMADA */}
+        <GrecaBar height="md" animated={true} className="z-10 shadow-[0_-2px_4px_rgba(0,0,0,0.5)]" />
       </div>
     </div>
   );

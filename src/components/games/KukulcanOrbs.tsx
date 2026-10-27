@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, RefreshCw, Zap, Target, Sparkles, Trophy } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 interface KukulcanOrbsProps {
   onClose: () => void;
@@ -10,17 +10,113 @@ interface KukulcanOrbsProps {
 interface SnakeOrb {
   id: string;
   value: number; // 1 to 19
-  color: string;
+  colorKey: 'gold' | 'jade' | 'terracotta' | 'ruby' | 'lime' | 'amethyst';
 }
 
-const ORB_COLORS = [
-  '#fabc4c', // Gold
-  '#76d4e4', // Jade / Cyan
-  '#e2725b', // Terracotta
-  '#a62b2b', // Crimson
-  '#b8bb26', // Lime
-  '#d3869b', // Amethyst
-];
+interface OrbColorConfig {
+  base: string;
+  light: string;
+  dark: string;
+  text: string;
+}
+
+const ORB_THEMES: Record<SnakeOrb['colorKey'], OrbColorConfig> = {
+  gold: { base: '#fabc4c', light: '#fef08a', dark: '#b45309', text: '#3f1a02' },
+  jade: { base: '#76d4e4', light: '#cffafe', dark: '#0e7490', text: '#083344' },
+  terracotta: { base: '#e2725b', light: '#fed7aa', dark: '#9a3412', text: '#431407' },
+  ruby: { base: '#ef4444', light: '#fca5a5', dark: '#991b1b', text: '#450a0a' },
+  lime: { base: '#84cc16', light: '#d9f99d', dark: '#3f6212', text: '#1a2e05' },
+  amethyst: { base: '#c084fc', light: '#f3e8ff', dark: '#6b21a8', text: '#2e1065' },
+};
+
+const COLOR_KEYS: SnakeOrb['colorKey'][] = ['gold', 'jade', 'terracotta', 'ruby', 'lime', 'amethyst'];
+
+// SNES 32x32 Pixel Art Orb Component
+const SnesPixelOrb: React.FC<{
+  value: number;
+  colorKey: SnakeOrb['colorKey'];
+  size?: 'sm' | 'md' | 'lg';
+  isMatch?: boolean;
+  onClick?: () => void;
+}> = ({ value, colorKey, size = 'md', isMatch = false, onClick }) => {
+  const theme = ORB_THEMES[colorKey] || ORB_THEMES.gold;
+  const dimClass = size === 'lg' ? 'w-14 h-14' : size === 'sm' ? 'w-9 h-9' : 'w-11 h-11';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative ${dimClass} cursor-pointer select-none transition-transform active:translate-y-0.5 focus:outline-none flex items-center justify-center`}
+    >
+      <svg
+        viewBox="0 0 32 32"
+        className="w-full h-full [image-rendering:pixelated]"
+        shapeRendering="crispEdges"
+      >
+        {/* Outer Black Pixel Outline (Stepped Octagonal Circle) */}
+        <rect x="6" y="2" width="20" height="2" fill="#000000" />
+        <rect x="6" y="28" width="20" height="2" fill="#000000" />
+        <rect x="2" y="6" width="2" height="20" fill="#000000" />
+        <rect x="28" y="6" width="2" height="20" fill="#000000" />
+        {/* Diagonal corners */}
+        <rect x="4" y="4" width="2" height="2" fill="#000000" />
+        <rect x="26" y="4" width="2" height="2" fill="#000000" />
+        <rect x="4" y="26" width="2" height="2" fill="#000000" />
+        <rect x="26" y="26" width="2" height="2" fill="#000000" />
+
+        {/* Main Jewel Body */}
+        <rect x="6" y="4" width="20" height="24" fill={theme.base} />
+        <rect x="4" y="6" width="24" height="20" fill={theme.base} />
+
+        {/* SNES Top-Left Light Specular Highlight Facet */}
+        <rect x="6" y="4" width="18" height="2" fill={theme.light} />
+        <rect x="4" y="6" width="2" height="18" fill={theme.light} />
+        <rect x="6" y="6" width="6" height="4" fill={theme.light} />
+        <rect x="6" y="6" width="4" height="6" fill={theme.light} />
+        {/* Specular White Pixel Dot */}
+        <rect x="6" y="6" width="3" height="3" fill="#ffffff" />
+
+        {/* SNES Bottom-Right Deep Shadow Crescent */}
+        <rect x="8" y="26" width="18" height="2" fill={theme.dark} />
+        <rect x="26" y="8" width="2" height="18" fill={theme.dark} />
+        <rect x="24" y="22" width="4" height="4" fill={theme.dark} />
+        <rect x="20" y="24" width="6" height="3" fill={theme.dark} />
+
+        {/* Matching Glow Bevel when valid combination */}
+        {isMatch && (
+          <>
+            <rect x="2" y="2" width="28" height="2" fill="#3ca276" opacity="0.9" />
+            <rect x="2" y="28" width="28" height="2" fill="#3ca276" opacity="0.9" />
+            <rect x="2" y="2" width="2" height="28" fill="#3ca276" opacity="0.9" />
+            <rect x="28" y="2" width="2" height="28" fill="#3ca276" opacity="0.9" />
+          </>
+        )}
+      </svg>
+
+      {/* Numerical Badge in center */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <span
+          className="font-press-start font-bold leading-none text-center"
+          style={{
+            color: theme.text,
+            fontSize: size === 'lg' ? '13px' : size === 'sm' ? '8px' : '10px',
+            textShadow: '1px 1px 0px rgba(255,255,255,0.4)',
+          }}
+        >
+          {value}
+        </span>
+        {size !== 'sm' && (
+          <span
+            className="font-press-start text-[6px] tracking-tight leading-none mt-0.5 opacity-80"
+            style={{ color: theme.text }}
+          >
+            +{20 - value}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+};
 
 export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward }) => {
   const [score, setScore] = useState(0);
@@ -31,6 +127,7 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
 
   // The snake queue of orbs
   const [orbs, setOrbs] = useState<SnakeOrb[]>([]);
+
   // Player loaded orb (1 to 19)
   const [loadedOrb, setLoadedOrb] = useState<number>(8);
   const [reserveOrb, setReserveOrb] = useState<number>(12);
@@ -43,7 +140,7 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
       return {
         id: `orb-${Date.now()}-${i}-${Math.random()}`,
         value: val,
-        color: ORB_COLORS[val % ORB_COLORS.length],
+        colorKey: COLOR_KEYS[val % COLOR_KEYS.length],
       };
     });
   };
@@ -51,7 +148,6 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
   useEffect(() => {
     const initial = generateRandomOrbs(7);
     setOrbs(initial);
-    // ensure loaded orb pairs with at least one in the snake
     const matching = 20 - initial[0].value;
     setLoadedOrb(matching > 0 && matching < 20 ? matching : 5);
     setReserveOrb(Math.floor(Math.random() * 19) + 1);
@@ -60,7 +156,7 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
   // Timer
   useEffect(() => {
     if (isGameOver || isWon) return;
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           setIsGameOver(true);
@@ -69,53 +165,28 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
         return t - 1;
       });
     }, 1000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [isGameOver, isWon]);
 
-  // Periodic new orb entering the snake
-  useEffect(() => {
-    if (isGameOver || isWon) return;
-    const spawnTimer = setInterval(() => {
-      setOrbs((prev) => {
-        if (prev.length >= 10) {
-          setIsGameOver(true);
-          return prev;
-        }
-        const val = Math.floor(Math.random() * 19) + 1;
-        return [
-          ...prev,
-          {
-            id: `orb-${Date.now()}-${Math.random()}`,
-            value: val,
-            color: ORB_COLORS[val % ORB_COLORS.length],
-          },
-        ];
-      });
-    }, 4500);
-
-    return () => clearInterval(spawnTimer);
-  }, [isGameOver, isWon]);
-
-  // Swap loaded and reserve
+  // Swap loaded with reserve
   const handleSwap = () => {
     const temp = loadedOrb;
     setLoadedOrb(reserveOrb);
     setReserveOrb(temp);
   };
 
-  // Shoot at a specific target orb
+  // Shoot at an orb
   const handleShootAt = (targetOrb: SnakeOrb) => {
     if (isGameOver || isWon) return;
-
     const sum = loadedOrb + targetOrb.value;
-    if (sum === 20) {
-      // SUCCESS: exact 20!
-      const points = 250 * combo;
-      setScore((s) => s + points);
-      setCombo((c) => Math.min(5, c + 1));
-      setFeedback(`¡COLAPSO VIGESIMAL! ${loadedOrb} + ${targetOrb.value} = 20 (+${points} PTS)`);
 
-      confetti({ particleCount: 25, spread: 50, origin: { y: 0.7 } });
+    if (sum === 20) {
+      // MATCH!
+      const points = 100 * combo + timeLeft * 5;
+      setScore((s) => s + points);
+      setCombo((c) => c + 1);
+      setTimeLeft((t) => Math.min(60, t + 4));
+      setFeedback(`¡COLAPSO VIGESIMAL! +${points} pts (${loadedOrb} + ${targetOrb.value} = 20)`);
 
       // Remove target orb
       setOrbs((prev) => {
@@ -128,7 +199,7 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
         return next;
       });
 
-      // Reload with new orb (prefer one that can pair with remaining)
+      // Reload
       setLoadedOrb(reserveOrb);
       setReserveOrb(Math.floor(Math.random() * 19) + 1);
     } else {
@@ -163,30 +234,35 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
       <div className="w-full flex items-center justify-between pb-2">
         <button
           onClick={onClose}
-          className="flex items-center gap-1.5 text-[9px] text-[#ffdeac] hover:text-[#fabc4c] font-press-start bg-[#20201f] hover:bg-[#2a2a2a] px-3 py-1.5 rounded-[2px] border border-[#353535] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099] cursor-pointer"
+          className="flex items-center gap-1.5 text-[9px] text-[#ffdeac] hover:text-[#fabc4c] font-press-start bg-[#20201f] hover:bg-[#2a2a2a] px-3 py-1.5 border border-[#353535] [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff22] cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>SALIR</span>
         </button>
+
         <div className="flex items-center gap-2">
-          <span className="font-press-start text-[8px] text-[#3ca276] bg-[#0e0e0e] px-2 py-1 border border-[#1e6b4b]">
+          <span className="font-press-start text-[8px] text-[#3ca276] bg-[#0e0e0e] px-2 py-1 border border-[#1e6b4b] [box-shadow:1px_1px_0px_#000]">
             PTS: {score}
           </span>
-          <span className={`font-press-start text-[8px] px-2 py-1 border ${timeLeft <= 5 ? 'text-[#ff5449] border-[#ba1a1a] animate-pulse' : 'text-[#fabc4c] border-[#7a5009]'}`}>
+          <span
+            className={`font-press-start text-[8px] px-2 py-1 border [box-shadow:1px_1px_0px_#000] ${
+              timeLeft <= 5 ? 'text-[#ff5449] border-[#ba1a1a] animate-pulse' : 'text-[#fabc4c] border-[#7a5009]'
+            }`}
+          >
             ⏳ {timeLeft}s
           </span>
         </div>
       </div>
 
       {/* Main Arcade Frame */}
-      <div className="w-full bg-[#211719] border-2 border-[#7a5009] [box-shadow:3px_3px_0px_#0a0607,_inset_1px_1px_0px_#f5ebd226,_inset_-1px_-1px_0px_#00000099] p-3 rounded-[2px] flex flex-col gap-3">
+      <div className="w-full bg-[#211719] border-2 border-[#7a5009] [box-shadow:3px_3px_0px_#000,_inset_2px_2px_0px_#ffffff18] p-3 flex flex-col gap-3">
         {/* Banner */}
-        <div className="border-b border-[#a62b2b] pb-2 flex items-center justify-between">
-          <span className="text-[7.5px] font-press-start text-[#f4b238] bg-[#281e20] border border-[#a62b2b] px-2 py-0.5">
-            VELOCIDAD & REFLEJO
+        <div className="border-b-2 border-[#a62b2b] pb-2 flex items-center justify-between">
+          <span className="text-[8.5px] font-press-start text-[#f4b238] bg-[#281e20] border border-[#a62b2b] px-2.5 py-1 [box-shadow:1px_1px_0px_#000]">
+            VELOCIDAD & REFLEJO · SNES 32-BIT
           </span>
           {combo > 1 && (
-            <span className="text-[8px] font-press-start text-[#3ca276] animate-pulse">
+            <span className="text-[9px] font-press-start text-[#3ca276] animate-pulse">
               COMBO x{combo}!
             </span>
           )}
@@ -194,119 +270,120 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
 
         {/* Title */}
         <div className="text-center">
-          <h2 className="text-[11px] font-press-start text-[#f5ebd2]">
+          <h2 className="text-[12px] font-press-start text-[#f5ebd2]">
             SENDA DE KUKULKÁN
           </h2>
-          <p className="text-[9px] text-[#8a7e66] mt-0.5">
+          <p className="text-[11px] text-[#f4efe6] font-['Space_Mono',monospace] mt-1">
             ¡Toca un orbe de la serpiente cuya suma con tu proyectil sea 20!
           </p>
         </div>
 
         {/* Feedback message */}
         {feedback && (
-          <div className="w-full text-center py-1 bg-[#0e0e0e] border border-[#fabc4c] text-[8px] font-press-start text-[#fabc4c]">
+          <div className="w-full text-center py-1.5 bg-[#0e0e0e] border-2 border-[#fabc4c] text-[9px] font-press-start text-[#fabc4c] [box-shadow:2px_2px_0px_#000]">
             {feedback}
           </div>
         )}
 
-        {/* Snake Serpent Track */}
-        <div className="relative w-full min-h-[220px] bg-[#120d0e] border-2 border-[#a62b2b] rounded p-3 flex flex-col justify-between overflow-hidden">
+        {/* Snake Serpent Track with SNES Stepped Scales */}
+        <div className="relative w-full min-h-[220px] bg-[#120d0e] border-2 border-[#a62b2b] p-3 flex flex-col justify-between overflow-hidden [box-shadow:inset_2px_2px_0px_#000000aa]">
           {/* Temple Shrine Target */}
-          <div className="w-full flex items-center justify-between border-b border-[#353535] pb-1 mb-2">
-            <span className="text-[7px] text-[#8a7e66]">SANTUARIO DEL CENOTE</span>
-            <span className="text-[7px] font-press-start text-[#ff5449]">
+          <div className="w-full flex items-center justify-between border-b border-[#353535] pb-1.5 mb-2">
+            <span className="text-[8.5px] text-[#cbd5e1] font-press-start">SANTUARIO DEL CENOTE</span>
+            <span className="text-[8.5px] font-press-start text-[#ff6b6b]">
               LONGITUD: {orbs.length}/10
             </span>
           </div>
 
-          {/* Snake Orbs Body */}
-          <div className="flex flex-wrap gap-2.5 items-center justify-center py-4">
-            {orbs.map((orb, index) => {
+          {/* Snake Orbs Body with SNES 32x32 Spherical Pixel Sprites */}
+          <div className="flex flex-wrap gap-3 items-center justify-center py-3">
+            {orbs.map((orb) => {
               const isMatch = loadedOrb + orb.value === 20;
               return (
-                <button
-                  key={orb.id}
-                  onClick={() => handleShootAt(orb)}
-                  className={`relative group w-12 h-12 rounded-full flex flex-col items-center justify-center border-2 cursor-pointer transition-transform active:scale-90 [box-shadow:2px_2px_0px_#000000] ${
-                    isMatch
-                      ? 'border-[#3ca276] ring-2 ring-[#3ca276] animate-pulse'
-                      : 'border-black hover:border-[#fabc4c]'
-                  }`}
-                  style={{ backgroundColor: orb.color }}
-                >
-                  <span className="text-black font-press-start text-[11px] font-bold drop-shadow">
-                    {orb.value}
-                  </span>
-                  {/* Complement needed */}
-                  <span className="text-[6.5px] font-press-start text-black/70">
-                    +{20 - orb.value}
-                  </span>
-                </button>
+                <div key={orb.id} className="relative">
+                  <SnesPixelOrb
+                    value={orb.value}
+                    colorKey={orb.colorKey}
+                    size="md"
+                    isMatch={isMatch}
+                    onClick={() => handleShootAt(orb)}
+                  />
+                </div>
               );
             })}
           </div>
 
-          {/* Serpent Head Icon */}
-          <div className="text-center text-[10px] text-[#8a7e66]">
-            🐍 La Serpiente de Jade avanza hacia el altar...
+          {/* SNES Feathered Serpent Sprite */}
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#353535]">
+            <svg viewBox="0 0 32 16" className="w-8 h-4 [image-rendering:pixelated]" shapeRendering="crispEdges">
+              <rect x="0" y="4" width="8" height="8" fill="#1e6b4b" stroke="#000" strokeWidth="0.5" />
+              <rect x="8" y="2" width="12" height="12" fill="#3ca276" stroke="#000" strokeWidth="0.5" />
+              <rect x="20" y="0" width="12" height="16" fill="#fabc4c" stroke="#000" strokeWidth="0.5" />
+              <rect x="24" y="4" width="3" height="3" fill="#ef4444" />
+              <rect x="25" y="5" width="1" height="1" fill="#fff" />
+              <rect x="14" y="6" width="3" height="3" fill="#76d4e4" />
+            </svg>
+            <span className="text-[8px] text-[#8a7e66] font-silkscreen">
+              La Serpiente de Jade avanza hacia el altar...
+            </span>
           </div>
         </div>
 
-        {/* Player Archer / Shooter Console */}
-        <div className="w-full bg-[#120d0e] border border-[#a62b2b] p-3 rounded flex items-center justify-between">
+        {/* Player Shooter Console */}
+        <div className="w-full bg-[#120d0e] border-2 border-[#a62b2b] p-3 flex items-center justify-between [box-shadow:inset_1px_1px_0px_#ffffff18]">
           {/* Loaded Orb */}
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-center">
               <span className="text-[7px] font-press-start text-[#fabc4c] mb-1">PROYECTIL</span>
-              <div
-                className="w-14 h-14 rounded-full border-2 border-white flex flex-col items-center justify-center [box-shadow:0_0_10px_#fabc4c]"
-                style={{ backgroundColor: ORB_COLORS[loadedOrb % ORB_COLORS.length] }}
-              >
-                <span className="text-black font-press-start text-[14px] font-bold">
-                  {loadedOrb}
-                </span>
-                <span className="text-[6px] font-press-start text-black/80">
-                  BUSCA: {20 - loadedOrb}
-                </span>
+              <div className="p-1 bg-[#1a1214] border-2 border-[#fabc4c] [box-shadow:2px_2px_0px_#000]">
+                <SnesPixelOrb
+                  value={loadedOrb}
+                  colorKey={COLOR_KEYS[loadedOrb % COLOR_KEYS.length]}
+                  size="lg"
+                />
               </div>
             </div>
 
             {/* Reserve Orb */}
-            <div className="flex flex-col items-center opacity-80">
+            <div className="flex flex-col items-center opacity-85">
               <span className="text-[6.5px] font-press-start text-[#8a7e66] mb-1">RESERVA</span>
               <div
                 onClick={handleSwap}
-                className="w-9 h-9 rounded-full border border-white/60 flex items-center justify-center cursor-pointer hover:scale-105 transition"
-                style={{ backgroundColor: ORB_COLORS[reserveOrb % ORB_COLORS.length] }}
+                className="p-1 bg-[#1a1214] border border-[#58413f] hover:border-[#fabc4c] cursor-pointer [box-shadow:1px_1px_0px_#000]"
+                title="Toca para intercambiar"
               >
-                <span className="text-black font-press-start text-[9px] font-bold">
-                  {reserveOrb}
-                </span>
+                <SnesPixelOrb
+                  value={reserveOrb}
+                  colorKey={COLOR_KEYS[reserveOrb % COLOR_KEYS.length]}
+                  size="sm"
+                />
               </div>
             </div>
           </div>
 
-          {/* Swap & Tip Controls */}
+          {/* Swap & Target Tip */}
           <div className="flex flex-col gap-1.5 items-end">
             <button
               onClick={handleSwap}
-              className="px-3 py-1.5 bg-[#281e20] hover:bg-[#382b2e] border border-[#a62b2b] text-[8px] font-press-start text-[#ffdeac] cursor-pointer flex items-center gap-1 active:scale-95"
+              className="px-3 py-1.5 bg-[#281e20] hover:bg-[#382b2e] border-2 border-[#a62b2b] text-[8px] font-press-start text-[#ffdeac] cursor-pointer flex items-center gap-1 active:translate-y-0.5 [box-shadow:2px_2px_0px_#000]"
             >
               <RefreshCw className="w-3 h-3" />
               <span>CAMBIAR</span>
             </button>
-            <span className="text-[6.5px] font-press-start text-[#76d4e4]">
+            <span className="text-[7px] font-press-start text-[#76d4e4]">
               META: SUMA = 20
             </span>
           </div>
         </div>
       </div>
 
-      {/* Modal Game Over / Won */}
+      {/* Modal Game Over / Won with SNES Bevels */}
       {(isGameOver || isWon) && (
-        <div className="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-xs bg-[#211719] border-2 border-[#fabc4c] p-4 text-center rounded flex flex-col gap-3 [box-shadow:4px_4px_0px_#000000]">
-            <span className="text-3xl">{isWon ? '🐍' : '💀'}</span>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-xs bg-[#211719] border-4 border-[#fabc4c] p-4 text-center flex flex-col gap-3 [box-shadow:4px_4px_0px_#000000]">
+            <div className="w-12 h-12 mx-auto bg-[#fabc4c] border-2 border-black flex items-center justify-center font-press-start text-sm text-black [box-shadow:2px_2px_0px_#000]">
+              {isWon ? '★' : '✕'}
+            </div>
             <h3 className="font-press-start text-[12px] text-[#ffdeac]">
               {isWon ? '¡SERPIENTE DOMADA!' : '¡SERPIENTE DESBORDADA!'}
             </h3>
@@ -318,13 +395,13 @@ export const KukulcanOrbs: React.FC<KukulcanOrbsProps> = ({ onClose, onReward })
             <div className="flex gap-2 justify-center pt-2">
               <button
                 onClick={restart}
-                className="px-3 py-2 bg-[#d4af37] text-black font-press-start text-[8px] border border-black cursor-pointer"
+                className="px-3 py-2 bg-[#d4af37] text-black font-press-start text-[8px] border-2 border-black cursor-pointer [box-shadow:2px_2px_0px_#000]"
               >
                 REINTENTAR
               </button>
               <button
                 onClick={onClose}
-                className="px-3 py-2 bg-[#20201f] text-[#ffdeac] font-press-start text-[8px] border border-[#a62b2b] cursor-pointer"
+                className="px-3 py-2 bg-[#20201f] text-[#ffdeac] font-press-start text-[8px] border-2 border-[#a62b2b] cursor-pointer [box-shadow:2px_2px_0px_#000]"
               >
                 VOLVER
               </button>

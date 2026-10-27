@@ -45,3 +45,58 @@
 .pixel-art {
   image-rendering: pixelated;
 }
+
+@keyframes pulseScaleGlow {
+  0%, 100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes grecaMarqueeArcade {
+  0%, 100% {
+    opacity: 0.85;
+    filter: brightness(1);
+  }
+  25% {
+    opacity: 1;
+    filter: brightness(1.25);
+  }
+  50% {
+    opacity: 0.85;
+    filter: brightness(1);
+  }
+  75% {
+    opacity: 1;
+    filter: brightness(1.3);
+  }
+}
+
+.animate-greca-arcade {
+  animation: grecaMarqueeArcade 2.4s steps(4, end) infinite;
+}
+
+.animate-pulse-scale-glow {
+  animation: pulseScaleGlow 2.2s ease-in-out infinite;
+}
+
+
+
+/* Lenis Smooth Scroll Configuration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}

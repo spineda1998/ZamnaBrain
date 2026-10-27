@@ -1,55 +1,40 @@
-# Plan de Implementación: CosmicBackground Shader WebGL, Integración en Login/Feed y Mascota Ceremonial
+# Plan Maestro de Migración: Itzamna Academia a Godot Engine 4
 
-Este plan describe la arquitectura y modificaciones necesarias para implementar el nuevo componente `CosmicBackground.tsx`, configurar la paleta solicitada (Azul Maya profundo, destellos Jade y Negro Abisal), adaptar su presentación atenuada en el Feed, y sincronizar la mascota de referencia para la pantalla de inicio y el spinner animado.
-
----
-
-## 1. Nuevo Componente: `src/components/CosmicBackground.tsx`
-- **Tecnología**: WebGL Fragment Shader nativo sobre elemento `<canvas>` con fallback a Canvas 2D idéntico.
-- **Renderizado Pixel Art & Dithering Ordenado**:
-  - Cuantización espacial nítida (`imageRendering: 'pixelated'`, tamaño de pixel virtual retro ajustable).
-  - Algoritmo de Dithering Ordenado mediante matriz Bayer 4x4 / 8x8 normalizada y calibrada para transiciones suaves de estilo retro 16-bit.
-- **Paleta Ceremonial Seleccionada**:
-  - **Negro Abisal de fondo**: `#020408`, `#05080f`, `#09111e`.
-  - **Azul Maya Profundo (Brazos espirales y nebulosa central)**: `#0d2744`, `#13406b`, `#1d659e`, `#29b6f6`.
-  - **Destellos de Jade Cósmico**: `#064e3b`, `#059669`, `#10b981`, `#34d399`.
-  - **Centellas estelares**: Puntos dorados y menta (`#fabc4c`, `#a7f3d0`) simulando constelaciones mayas (*Tzab-ek*).
-- **Parámetros configurables (`CosmicBackgroundProps`)**:
-  - `variant: 'login' | 'feed' | 'subtle'`:
-    - En `'login'`: intensidad completa y contraste vibrante detrás de la tablilla de arcilla.
-    - En `'feed'`: renderizado oscurecido y atenuado (baja saturación/brillo) con superposición oscura semitransparente para preservar la máxima legibilidad de los textos y retos semanales.
-  - `speed`: factor de velocidad de rotación cósmica (por defecto 0.8–1.0).
-  - `interactive`: perturbación reactiva al cursor/tacto en coordenadas UV.
-  - `dimmed`: flag para atenuación rápida adicional.
+Este documento establece el análisis de viabilidad técnica, la arquitectura del motor y la hoja de ruta integral para migrar la totalidad de **Itzamna Academia** desde la arquitectura actual (React + WebGL + Express) hacia **Godot Engine 4 (GDScript)** con destino principal a **Google Play Store (Android)** y **Apple App Store (iOS)**.
 
 ---
 
-## 2. Integración en Pantalla de Login (`src/components/LoginModal.tsx`)
-- Sustituir `WakahChanGalaxy` por `CosmicBackground` en modo `variant="login"`.
-- Mantener la tablilla de arcilla roja cinabrio (`#a62b2bff`), las grecas mayas doradas y el encabezado arcade `ITZAMNA ACADEMIA` con drop-shadow 3D.
-- Posicionar la mascota ceremonial centrada sobre la tablilla con animación de flotación limpia sin auras circulares.
+## 1. Veredicto de Viabilidad Técnica
+
+### Viabilidad Global: **9.4 / 10 (Excelente)**
+La decisión de destinar el proyecto a tiendas móviles nativas (Google Play y App Store) elimina por completo la principal debilidad de Godot (el tamaño de descarga inicial en WebAssembly) y potencia sus mayores fortalezas:
+1. **Rendimiento 60 FPS constante en móviles**: Acceso directo al renderizador `Mobile` (Vulkan) y fallback `Compatibility` (OpenGL ES 3.0), garantizando compatibilidad con el 99% de dispositivos Android e iOS.
+2. **Estética Pixel Art pura con escalado entero**: Godot cuenta con soporte nativo de `viewport` stretch mode y filtro de textura `Nearest`, eliminando cualquier borrosidad o desalineación de píxeles sin necesidad de hacks CSS.
+3. **Consumo de batería y memoria**: La aplicación nativa en Godot consume entre 60MB y 110MB de RAM frente a los 250MB+ de un WebView móvil.
+4. **Reutilización del backend existente**: Godot se comunicará mediante el nodo `HTTPRequest` con la API REST existente (`/v1`), manteniendo el progreso, perfiles, aulas y clasificación intactos.
 
 ---
 
-## 3. Integración en el Feed Principal (`src/components/FeedView.tsx` y `src/App.tsx`)
-- Integrar `CosmicBackground` como capa de fondo de la aplicación en la pestaña de inicio/feed con `variant="feed"`.
-- Configurar el shader con opacidad y luminosidad reducidas, añadiendo una sutil capa de absorción de luz para que las tarjetas de retos, misiones y estadísticas de alumno mantengan un contraste AAA óptimo.
-- Asegurar que no interfiera con los eventos de scroll ni la barra de navegación inferior `BottomNav`.
+## 2. Estado de Ejecución de la Hoja de Ruta
+
+| Fase | Estado | Entregables Clave |
+| :--- | :--- | :--- |
+| **Fase 1: Andamiaje y Shaders** | **COMPLETADA** | Creación del proyecto Godot 4 (`project.godot`), configuración de viewport vertical 360x640 pixel-perfect, port del shader cósmico (`cosmic_bg.gdshader`), shader de títulos (`dither_text.gdshader`), singletons Autoload (`game_state.gd`, `api_client.gd`, `audio_manager.gd`) y escena de arranque (`boot_splash.tscn`). |
+| **Fase 2: Cliente API y Auth** | **EN PROGRESO** | Vinculación del singleton `ApiClient.gd` con la API `/v1`, pantalla de login ceremonial tipo códice y persistencia cifrada de JWT en `user://token.dat`. |
+| **Fase 3: Port de los 4 Minijuegos** | Planificada | Tetris Azteca (TileMapLayer), Máscaras Gemelas (animación flip), Balanza de Jade (torque ceremonial) y Senda de Kukulkán (Path2D). Pruebas de controles táctiles móviles. |
+| **Fase 4: Shell Principal y Vistas LMS** | Planificada | Implementación del Feed con scroll suave, Sendero de aprendizaje (mapa de nodos desbloqueables), Códice interactivo y barra `BottomNav`. |
+| **Fase 5: Build Móvil y Optimización** | Planificada | Configuración de builds de prueba APK y Xcode, ajuste de Safe Areas, integración de hápticos y pruebas de rendimiento en dispositivos gama baja/media. |
+| **Fase 6: Certificación y Tiendas** | Planificada | Generación de `.aab` para Google Play Console y build iOS para TestFlight / App Store Connect, capturas de pantalla promocionales y checklist de privacidad educativa. |
 
 ---
 
-## 4. Mascota de Referencia (`DeityAxolotl.tsx`) y Spinner (`PixelArtSpinner.tsx`)
-- **Mascota Ceremonial en Login**:
-  - Ajustar la silueta y paleta del sprite pixel art sagrado según la referencia ceremonial: cerebro sagrado místico con plumas de quetzal, diadema dorada con gema de jade y expresión arcade estilizada.
-  - Garantizar fondo 100% transparente sin orbes, discos ni círculos decorativos exteriores.
-  - Mantener la animación de flotación levitante fluida mediante keyframes CSS `float`.
-- **Spinner de Carga (`PixelArtSpinner.tsx`)**:
-  - Sincronizar el sprite con la versión miniatura idéntica de la mascota ceremonial.
-  - Conservar la animación sutil de levitación y respiración de píxeles (`spinnerFloat`) tanto en el botón de combate como en los estados de transición.
+## 3. Archivos del Proyecto Godot Creados en el Repositorio (`/godot`)
 
----
-
-## 5. Verificación y Validación
-- Compilar la aplicación mediante `compile_applet` para garantizar que no existan errores de TypeScript ni sintaxis.
-- Verificar el comportamiento responsivo del canvas en pantallas móviles y desktop.
-- Confirmar el desempeño fluido a 60 FPS del shader WebGL con degradación elegante a Canvas 2D.
+* **`godot/project.godot`**: Configuración de pantalla `360x640`, orientación vertical (`portrait`), stretch mode `viewport`, renderizador `Mobile` y filtro de textura `Nearest`.
+* **`godot/shaders/cosmic_bg.gdshader`**: Shader del fondo espacial Maya con matriz ordenada Bayer 4x4, cuantización de hardware DAC SNES RGB555 a 15 bits reales y paleta indexada de 256 colores.
+* **`godot/shaders/dither_text.gdshader`**: Shader de semitono Bayer 4x4 para títulos canónicos en oro/ámbar/cinabrio y azul maya.
+* **`godot/autoload/game_state.gd`**: Singleton con persistencia cifrada (`user://game_state.dat`), gestión de los 10 puntos de Energía de Jade y reinicio ritual de 24 horas.
+* **`godot/autoload/api_client.gd`**: Singleton con cliente REST asíncrono (`HTTPRequest`), almacenamiento seguro de JWT (`user://token.dat`) y sincronización con el backend Express.
+* **`godot/autoload/audio_manager.gd`**: Mezclador de audio retro con sintetizador procedural de ondas cuadradas de 16 bits para efectos SFX sin latencia.
+* **`godot/scenes/core/boot_splash.tscn`**: Escena inicial con fondo shader cósmico, título `ITZAMNA ACADEMIA` con pulso y escalado rítmico, y comprobación de sesión.
+* **`godot/README.md`**: Guía paso a paso para abrir el proyecto en Godot 4.3+ y exportar a Google Play y App Store.

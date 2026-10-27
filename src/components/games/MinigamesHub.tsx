@@ -33,7 +33,6 @@ interface ArcadeGameItem {
 }
 
 export const MinigamesHub: React.FC<MinigamesHubProps> = ({
-  onBackToSendero,
   onBackToFeed,
   initialGame = null,
   onRewardCoins,
@@ -51,10 +50,10 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
   // Render individual game engines if selected - In immersive full-screen phone mode
   if (activeGame) {
     const gameTitles: Record<string, string> = {
-      tetris: 'TETRIS AZTECA',
-      memorama: 'MÁSCARAS GEMELAS',
-      balanza: 'BALANZA DE JADE',
-      kukulcan: 'SENDA DE KUKULKÁN',
+      tetris: 'TETRIS AZTECA · SNES 32-BIT',
+      memorama: 'MÁSCARAS GEMELAS · SNES 32-BIT',
+      balanza: 'BALANZA DE JADE · SNES 32-BIT',
+      kukulcan: 'SENDA DE KUKULKÁN · SNES 32-BIT',
     };
 
     return (
@@ -69,7 +68,6 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
           gameTitle={gameTitles[activeGame] || 'MINIJUEGO ARCADE'}
           language={language}
         />
-
         {activeGame === 'tetris' && (
           <MayaTetris onClose={() => setActiveGame(null)} onReward={onRewardCoins} />
         )}
@@ -86,7 +84,7 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
     );
   }
 
-  // 5 Arcade Games in catalog using the new card component structure
+  // 5 Arcade Games in catalog with authentic SNES 32x32 pixel art scenes
   const ARCADE_GAMES: ArcadeGameItem[] = [
     {
       id: 'kukulcan',
@@ -98,88 +96,68 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
       desc: 'Dispara orbes sagrados que sumen exactamente 20 para colapsar los eslabones de la serpiente.',
       tags: ['VIGESIMAL', 'PUNTERÍA'],
       bannerIllustration: (
-        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#0c1410] preserve-3d">
-          <defs>
-            <linearGradient id="serpentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e6b4b" />
-              <stop offset="50%" stopColor="#3ca276" />
-              <stop offset="100%" stopColor="#80d5ae" />
-            </linearGradient>
-            <radialGradient id="orbGlowGold" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ffe27a" />
-              <stop offset="100%" stopColor="#d99b26" />
-            </radialGradient>
-            <radialGradient id="orbGlowTeal" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#a5f3fc" />
-              <stop offset="100%" stopColor="#0891b2" />
-            </radialGradient>
-            <radialGradient id="orbGlowRed" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#fca5a5" />
-              <stop offset="100%" stopColor="#dc2626" />
-            </radialGradient>
-          </defs>
-          {/* Temple pyramid silhouette in background */}
-          <polygon points="120,144 140,80 170,80 190,144" fill="#091a13" opacity="0.6" />
-          <polygon points="180,144 205,65 245,65 270,144" fill="#091a13" opacity="0.8" />
-          <polygon points="215,65 220,50 230,50 235,65" fill="#122c21" />
+        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#0c1410] [image-rendering:pixelated]" shapeRendering="crispEdges">
+          {/* SNES Stone Wall Background Grid */}
+          <rect x="0" y="0" width="374" height="144" fill="#0d1813" />
+          <line x1="0" y1="36" x2="374" y2="36" stroke="#07100c" strokeWidth="2" />
+          <line x1="0" y1="72" x2="374" y2="72" stroke="#07100c" strokeWidth="2" />
+          <line x1="0" y1="108" x2="374" y2="108" stroke="#07100c" strokeWidth="2" />
 
-          {/* Serpent winding body */}
-          <path
-            d="M 20 120 Q 80 40 160 90 T 300 60 Q 340 70 355 100"
-            fill="none"
-            stroke="#0a2a1d"
-            strokeWidth="28"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 20 120 Q 80 40 160 90 T 300 60 Q 340 70 355 100"
-            fill="none"
-            stroke="url(#serpentGlow)"
-            strokeWidth="18"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 20 120 Q 80 40 160 90 T 300 60 Q 340 70 355 100"
-            fill="none"
-            stroke="#fabc4c"
-            strokeWidth="2"
-            strokeDasharray="4 6"
-            strokeLinecap="round"
-          />
+          {/* Stepped Pixel Pyramid in background */}
+          <rect x="150" y="24" width="74" height="16" fill="#15261d" />
+          <rect x="130" y="40" width="114" height="20" fill="#15261d" />
+          <rect x="110" y="60" width="154" height="24" fill="#15261d" />
+          <rect x="90" y="84" width="194" height="28" fill="#15261d" />
+          <rect x="70" y="112" width="234" height="32" fill="#15261d" />
 
-          {/* Kukulkan Feathered Head */}
-          <g transform="translate(340, 85)">
-            <polygon points="0,0 26,10 12,25 -5,16" fill="#fabc4c" stroke="#000" strokeWidth="2" />
-            <polygon points="-5,-8 10,-2 2,-12" fill="#e2725b" />
-            <polygon points="5,-14 18,-6 10,-20" fill="#3ca276" />
-            <circle cx="16" cy="8" r="3.5" fill="#a62b2b" stroke="#000" strokeWidth="1" />
-            <circle cx="17" cy="7" r="1.2" fill="#fff" />
+          {/* Kukulkan Serpent Pixel Spine Track */}
+          <rect x="16" y="96" width="48" height="20" fill="#1e6b4b" stroke="#000" strokeWidth="1" />
+          <rect x="56" y="68" width="48" height="20" fill="#1e6b4b" stroke="#000" strokeWidth="1" />
+          <rect x="96" y="48" width="60" height="20" fill="#3ca276" stroke="#000" strokeWidth="1" />
+          <rect x="148" y="72" width="60" height="20" fill="#3ca276" stroke="#000" strokeWidth="1" />
+          <rect x="200" y="56" width="60" height="20" fill="#1e6b4b" stroke="#000" strokeWidth="1" />
+          <rect x="252" y="80" width="56" height="20" fill="#3ca276" stroke="#000" strokeWidth="1" />
+
+          {/* Feathered Serpent Head in 32x32 Pixel Art */}
+          <g transform="translate(304, 70)">
+            <rect x="0" y="4" width="28" height="24" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="4" y="0" width="8" height="8" fill="#e2725b" />
+            <rect x="12" y="-4" width="10" height="8" fill="#3ca276" />
+            <rect x="14" y="8" width="5" height="5" fill="#ef4444" stroke="#000" strokeWidth="0.5" />
+            <rect x="16" y="9" width="2" height="2" fill="#ffffff" />
             {/* Forked tongue */}
-            <path d="M 26 12 L 34 14 L 38 10 M 34 14 L 38 18" stroke="#ef4444" strokeWidth="2" fill="none" />
+            <rect x="28" y="16" width="8" height="2" fill="#ef4444" />
+            <rect x="34" y="12" width="4" height="2" fill="#ef4444" />
+            <rect x="34" y="20" width="4" height="2" fill="#ef4444" />
           </g>
 
-          {/* Zuma Sacred Orbs along the track */}
-          <circle cx="50" cy="98" r="11" fill="url(#orbGlowGold)" stroke="#000" strokeWidth="2" />
-          <text x="50" y="102" fill="#452a00" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">5</text>
+          {/* SNES 32x32 Spherical Pixel Orbs along track */}
+          {/* Orb 1: Gold 5 */}
+          <g transform="translate(36, 88)">
+            <rect x="2" y="0" width="16" height="20" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="0" y="2" width="20" height="16" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="3" y="3" width="4" height="4" fill="#ffffff" />
+            <rect x="4" y="14" width="12" height="3" fill="#b45309" />
+            <text x="10" y="14" fill="#3f1a02" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">5</text>
+          </g>
 
-          <circle cx="85" cy="68" r="11" fill="url(#orbGlowTeal)" stroke="#000" strokeWidth="2" />
-          <text x="85" y="72" fill="#003545" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">15</text>
+          {/* Orb 2: Jade 15 */}
+          <g transform="translate(116, 40)">
+            <rect x="2" y="0" width="16" height="20" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+            <rect x="0" y="2" width="20" height="16" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+            <rect x="3" y="3" width="4" height="4" fill="#ffffff" />
+            <rect x="4" y="14" width="12" height="3" fill="#0e7490" />
+            <text x="10" y="14" fill="#083344" fontSize="7" fontFamily="Press Start 2P" textAnchor="middle">15</text>
+          </g>
 
-          <circle cx="130" cy="72" r="11" fill="url(#orbGlowRed)" stroke="#000" strokeWidth="2" />
-          <text x="130" y="76" fill="#fff" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">10</text>
-
-          <circle cx="178" cy="94" r="11" fill="url(#orbGlowGold)" stroke="#000" strokeWidth="2" />
-          <text x="178" y="98" fill="#452a00" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">10</text>
-
-          <circle cx="230" cy="84" r="11" fill="url(#orbGlowTeal)" stroke="#000" strokeWidth="2" />
-          <text x="230" y="88" fill="#003545" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">20</text>
-
-          <circle cx="278" cy="65" r="11" fill="url(#orbGlowRed)" stroke="#000" strokeWidth="2" />
-          <text x="278" y="69" fill="#fff" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">0</text>
-
-          {/* Ancient Glyphs Floating */}
-          <rect x="22" y="24" width="16" height="16" rx="2" fill="#091a13" stroke="#3ca276" strokeWidth="1" opacity="0.7" />
-          <circle cx="30" cy="32" r="4" fill="#3ca276" opacity="0.6" />
+          {/* Orb 3: Ruby 10 */}
+          <g transform="translate(220, 48)">
+            <rect x="2" y="0" width="16" height="20" fill="#ef4444" stroke="#000" strokeWidth="1" />
+            <rect x="0" y="2" width="20" height="16" fill="#ef4444" stroke="#000" strokeWidth="1" />
+            <rect x="3" y="3" width="4" height="4" fill="#ffffff" />
+            <rect x="4" y="14" width="12" height="3" fill="#991b1b" />
+            <text x="10" y="14" fill="#ffffff" fontSize="7" fontFamily="Press Start 2P" textAnchor="middle">10</text>
+          </g>
         </svg>
       ),
     },
@@ -193,57 +171,66 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
       desc: 'Apila bloques tallados de estelas y glifos. Despeja líneas horizontales para recolectar ofrendas de jade.',
       tags: ['BASE 20', 'ESTELAS'],
       bannerIllustration: (
-        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#181113]">
-          <defs>
-            <linearGradient id="tetrisBg" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#2a181c" />
-              <stop offset="100%" stopColor="#120b0d" />
-            </linearGradient>
-            <pattern id="brickPattern" width="20" height="12" patternUnits="userSpaceOnUse">
-              <rect width="20" height="12" fill="none" stroke="#2d1d20" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="374" height="144" fill="url(#tetrisBg)" />
-          <rect width="374" height="144" fill="url(#brickPattern)" opacity="0.4" />
+        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#160d0f] [image-rendering:pixelated]" shapeRendering="crispEdges">
+          {/* Temple Stone Wall */}
+          <rect x="0" y="0" width="374" height="144" fill="#191013" />
+          <line x1="0" y1="36" x2="374" y2="36" stroke="#0a0507" strokeWidth="2" />
+          <line x1="0" y1="72" x2="374" y2="72" stroke="#0a0507" strokeWidth="2" />
+          <line x1="0" y1="108" x2="374" y2="108" stroke="#0a0507" strokeWidth="2" />
 
-          {/* Stepped Pyramid outline */}
-          <polygon points="30,144 80,45 294,45 344,144" fill="#1b1013" stroke="#58413f" strokeWidth="1.5" />
-          <line x1="80" y1="45" x2="294" y2="45" stroke="#fabc4c" strokeWidth="2" />
+          {/* Stepped Temple Silhouette */}
+          <rect x="140" y="16" width="94" height="20" fill="#24171a" stroke="#000" strokeWidth="1" />
+          <rect x="110" y="36" width="154" height="20" fill="#24171a" stroke="#000" strokeWidth="1" />
+          <rect x="80" y="56" width="214" height="20" fill="#24171a" stroke="#000" strokeWidth="1" />
 
-          {/* Tetris Maya Blocks */}
-          {/* L shape (Jade green) */}
-          <g transform="translate(140, 20)">
-            <rect x="0" y="0" width="22" height="22" fill="#3ca276" stroke="#000" strokeWidth="2" rx="2" />
-            <circle cx="11" cy="11" r="4" fill="#fabc4c" />
-            <rect x="0" y="22" width="22" height="22" fill="#3ca276" stroke="#000" strokeWidth="2" rx="2" />
-            <circle cx="11" cy="33" r="4" fill="#fabc4c" />
-            <rect x="22" y="22" width="22" height="22" fill="#3ca276" stroke="#000" strokeWidth="2" rx="2" />
-            <rect x="28" y="31" width="10" height="4" fill="#fabc4c" />
+          {/* Falling and Stacked 32x32 Quad-Beveled SNES Tetrominoes */}
+          {/* 1. Jade Bar (I-piece) */}
+          <g transform="translate(60, 96)">
+            {[0, 24, 48, 72].map((ox) => (
+              <g key={ox} transform={`translate(${ox}, 0)`}>
+                <rect x="0" y="0" width="24" height="24" fill="#10b981" stroke="#000" strokeWidth="1" />
+                <rect x="1" y="1" width="22" height="2" fill="#6ee7b7" />
+                <rect x="1" y="1" width="2" height="22" fill="#6ee7b7" />
+                <rect x="1" y="21" width="22" height="2" fill="#047857" />
+                <rect x="21" y="1" width="2" height="22" fill="#047857" />
+                <rect x="9" y="9" width="6" height="6" fill="#022c22" />
+              </g>
+            ))}
           </g>
 
-          {/* Stacked Base Blocks on bottom */}
-          <g transform="translate(90, 84)">
-            <rect x="0" y="0" width="24" height="24" fill="#d99b26" stroke="#000" strokeWidth="2" />
-            <rect x="24" y="0" width="24" height="24" fill="#d99b26" stroke="#000" strokeWidth="2" />
-            <rect x="48" y="0" width="24" height="24" fill="#d99b26" stroke="#000" strokeWidth="2" />
-            <rect x="72" y="0" width="24" height="24" fill="#0891b2" stroke="#000" strokeWidth="2" />
-            <rect x="96" y="0" width="24" height="24" fill="#0891b2" stroke="#000" strokeWidth="2" />
-            <rect x="120" y="0" width="24" height="24" fill="#a62b2b" stroke="#000" strokeWidth="2" />
-            <rect x="144" y="0" width="24" height="24" fill="#a62b2b" stroke="#000" strokeWidth="2" />
-            <rect x="168" y="0" width="24" height="24" fill="#3ca276" stroke="#000" strokeWidth="2" />
-
-            <rect x="24" y="24" width="24" height="24" fill="#a62b2b" stroke="#000" strokeWidth="2" />
-            <rect x="48" y="24" width="24" height="24" fill="#a62b2b" stroke="#000" strokeWidth="2" />
-            <rect x="72" y="24" width="24" height="24" fill="#3ca276" stroke="#000" strokeWidth="2" />
-            <rect x="96" y="24" width="24" height="24" fill="#3ca276" stroke="#000" strokeWidth="2" />
-            <rect x="120" y="24" width="24" height="24" fill="#d99b26" stroke="#000" strokeWidth="2" />
-            <rect x="144" y="24" width="24" height="24" fill="#d99b26" stroke="#000" strokeWidth="2" />
+          {/* 2. Gold Block (O-piece) */}
+          <g transform="translate(170, 72)">
+            {[
+              [0, 0], [24, 0],
+              [0, 24], [24, 24]
+            ].map(([ox, oy], idx) => (
+              <g key={idx} transform={`translate(${ox}, ${oy})`}>
+                <rect x="0" y="0" width="24" height="24" fill="#fbbf24" stroke="#000" strokeWidth="1" />
+                <rect x="1" y="1" width="22" height="2" fill="#fef08a" />
+                <rect x="1" y="1" width="2" height="22" fill="#fef08a" />
+                <rect x="1" y="21" width="22" height="2" fill="#d97706" />
+                <rect x="21" y="1" width="2" height="22" fill="#d97706" />
+                <rect x="9" y="9" width="6" height="6" fill="#78350f" />
+              </g>
+            ))}
           </g>
 
-          {/* Falling particle sparks */}
-          <circle cx="152" cy="74" r="2" fill="#fabc4c" />
-          <circle cx="168" cy="68" r="1.5" fill="#76d4e4" />
-          <circle cx="210" cy="55" r="2" fill="#fabc4c" />
+          {/* 3. Ruby T-piece */}
+          <g transform="translate(250, 48)">
+            {[
+              [24, 0],
+              [0, 24], [24, 24], [48, 24]
+            ].map(([ox, oy], idx) => (
+              <g key={idx} transform={`translate(${ox}, ${oy})`}>
+                <rect x="0" y="0" width="24" height="24" fill="#ef4444" stroke="#000" strokeWidth="1" />
+                <rect x="1" y="1" width="22" height="2" fill="#fca5a5" />
+                <rect x="1" y="1" width="2" height="22" fill="#fca5a5" />
+                <rect x="1" y="21" width="22" height="2" fill="#b91c1c" />
+                <rect x="21" y="1" width="2" height="22" fill="#b91c1c" />
+                <rect x="9" y="9" width="6" height="6" fill="#450a0a" />
+              </g>
+            ))}
+          </g>
         </svg>
       ),
     },
@@ -257,47 +244,69 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
       desc: 'Voltea tablillas sagradas de arcilla y empareja glifos vigesimales con sus números equivalentes.',
       tags: ['GLIFOS', 'PAREJAS'],
       bannerIllustration: (
-        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#181116]">
-          <defs>
-            <radialGradient id="maskGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#432c00" />
-              <stop offset="100%" stopColor="#181116" />
-            </radialGradient>
-          </defs>
-          <rect width="374" height="144" fill="url(#maskGlow)" />
+        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#181116] [image-rendering:pixelated]" shapeRendering="crispEdges">
+          {/* Temple Chamber Masonry */}
+          <rect x="0" y="0" width="374" height="144" fill="#1e141a" />
+          <line x1="0" y1="48" x2="374" y2="48" stroke="#0e0a0d" strokeWidth="2" />
+          <line x1="0" y1="96" x2="374" y2="96" stroke="#0e0a0d" strokeWidth="2" />
 
-          {/* Radiant Sun disc behind masks */}
-          <circle cx="187" cy="72" r="54" fill="#2d1e22" stroke="#fabc4c" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+          {/* Left Stone Tablet (Mayan 7: 2 dots + 1 bar) */}
+          <g transform="translate(68, 20)">
+            <rect x="0" y="0" width="68" height="98" fill="#251a1d" stroke="#000" strokeWidth="2" />
+            <rect x="2" y="2" width="64" height="2" fill="#7a5009" />
+            <rect x="2" y="2" width="2" height="94" fill="#7a5009" />
+            <rect x="2" y="94" width="64" height="2" fill="#100a08" />
+            <rect x="64" y="2" width="2" height="94" fill="#100a08" />
 
-          {/* Left Tablet Card (Mayan Number) */}
-          <g transform="translate(100, 22)">
-            <rect x="0" y="0" width="68" height="96" rx="6" fill="#251b1d" stroke="#fabc4c" strokeWidth="2" />
-            <rect x="4" y="4" width="60" height="88" rx="4" fill="#181113" stroke="#58413f" strokeWidth="1" />
-            {/* Mayan Number 7 (2 dots + 1 bar) */}
-            <circle cx="27" cy="38" r="4.5" fill="#fabc4c" stroke="#000" strokeWidth="1" />
-            <circle cx="41" cy="38" r="4.5" fill="#fabc4c" stroke="#000" strokeWidth="1" />
-            <rect x="18" y="52" width="32" height="7" rx="2" fill="#fabc4c" stroke="#000" strokeWidth="1" />
-            <text x="34" y="80" fill="#a78a87" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">GLIFO</text>
+            {/* 2 Spherical Dots */}
+            <rect x="20" y="24" width="10" height="10" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="21" y="25" width="3" height="3" fill="#ffffff" />
+            <rect x="38" y="24" width="10" height="10" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="39" y="25" width="3" height="3" fill="#ffffff" />
+
+            {/* 1 Beveled Bar */}
+            <rect x="14" y="44" width="40" height="10" fill="#d99b26" stroke="#000" strokeWidth="1" />
+            <rect x="15" y="45" width="38" height="2" fill="#fef08a" />
+            <rect x="15" y="51" width="38" height="2" fill="#78350f" />
+
+            <text x="34" y="78" fill="#fabc4c" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">
+              GLIFO
+            </text>
           </g>
 
-          {/* Right Tablet Card (Arabic Equivalent) */}
-          <g transform="translate(206, 22)">
-            <rect x="0" y="0" width="68" height="96" rx="6" fill="#251b1d" stroke="#3ca276" strokeWidth="2" />
-            <rect x="4" y="4" width="60" height="88" rx="4" fill="#181113" stroke="#58413f" strokeWidth="1" />
-            <text x="34" y="56" fill="#80d5ae" fontSize="28" fontFamily="Press Start 2P" textAnchor="middle">
+          {/* Central Carved Jade Mask */}
+          <g transform="translate(162, 36)">
+            <rect x="0" y="8" width="50" height="56" fill="#1e6b4b" stroke="#000" strokeWidth="2" />
+            <rect x="4" y="0" width="42" height="10" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+            <rect x="18" y="-6" width="14" height="8" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+            {/* Mask Eyes */}
+            <rect x="8" y="22" width="10" height="10" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+            <rect x="10" y="24" width="3" height="3" fill="#ffffff" />
+            <rect x="32" y="22" width="10" height="10" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+            <rect x="34" y="24" width="3" height="3" fill="#ffffff" />
+            {/* Nose */}
+            <rect x="22" y="26" width="6" height="14" fill="#3ca276" stroke="#000" strokeWidth="1" />
+            {/* Mouth */}
+            <rect x="14" y="44" width="22" height="8" fill="#0c1d15" stroke="#000" strokeWidth="1" />
+            <rect x="18" y="46" width="4" height="4" fill="#ffffff" />
+            <rect x="28" y="46" width="4" height="4" fill="#ffffff" />
+          </g>
+
+          {/* Right Stone Tablet (Arabic 7) */}
+          <g transform="translate(238, 20)">
+            <rect x="0" y="0" width="68" height="98" fill="#251a1d" stroke="#000" strokeWidth="2" />
+            <rect x="2" y="2" width="64" height="2" fill="#3ca276" />
+            <rect x="2" y="2" width="2" height="94" fill="#3ca276" />
+            <rect x="2" y="94" width="64" height="2" fill="#092014" />
+            <rect x="64" y="2" width="2" height="94" fill="#092014" />
+
+            <text x="34" y="52" fill="#80d5ae" fontSize="26" fontFamily="Press Start 2P" textAnchor="middle">
               7
             </text>
-            <text x="34" y="80" fill="#3ca276" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">NUM</text>
+            <text x="34" y="78" fill="#3ca276" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">
+              NUM
+            </text>
           </g>
-
-          {/* Mayan Funerary Jade Mask Crown Center */}
-          <polygon points="187,14 200,28 174,28" fill="#fabc4c" stroke="#000" strokeWidth="1" />
-          <circle cx="187" cy="24" r="3" fill="#a62b2b" />
-          {/* Sparkles */}
-          <circle cx="70" cy="40" r="2" fill="#fabc4c" />
-          <circle cx="304" cy="40" r="2" fill="#3ca276" />
-          <circle cx="50" cy="110" r="1.5" fill="#fabc4c" />
-          <circle cx="320" cy="110" r="1.5" fill="#80d5ae" />
         </svg>
       ),
     },
@@ -311,41 +320,46 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
       desc: 'Equilibra la balanza ceremonial colocando pesas mayas hasta igualar el tributo exigido por los sacerdotes.',
       tags: ['MATEMÁTICAS', 'EQUILIBRIO'],
       bannerIllustration: (
-        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#121015]">
-          <defs>
-            <linearGradient id="balanceGlow" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#1f1a26" />
-              <stop offset="100%" stopColor="#0b0a0e" />
-            </linearGradient>
-          </defs>
-          <rect width="374" height="144" fill="url(#balanceGlow)" />
+        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#121015] [image-rendering:pixelated]" shapeRendering="crispEdges">
+          {/* Temple Wall */}
+          <rect x="0" y="0" width="374" height="144" fill="#18141d" />
+          <line x1="0" y1="48" x2="374" y2="48" stroke="#09070c" strokeWidth="2" />
+          <line x1="0" y1="96" x2="374" y2="96" stroke="#09070c" strokeWidth="2" />
 
-          {/* Sacred Temple Altar Backdrop */}
-          <polygon points="140,144 165,30 209,30 234,144" fill="#1b1722" stroke="#352e42" strokeWidth="1" />
+          {/* Stepped Central Fulcrum Pyramid */}
+          <rect x="175" y="44" width="24" height="14" fill="#7a5009" stroke="#000" strokeWidth="1" />
+          <rect x="165" y="58" width="44" height="20" fill="#58413f" stroke="#000" strokeWidth="1" />
+          <rect x="155" y="78" width="64" height="24" fill="#382928" stroke="#000" strokeWidth="1" />
+          <rect x="145" y="102" width="84" height="26" fill="#201716" stroke="#000" strokeWidth="1" />
 
-          {/* Central Pillar */}
-          <polygon points="187,35 180,120 194,120" fill="#58413f" stroke="#000" strokeWidth="1.5" />
-          <rect x="170" y="120" width="34" height="10" fill="#d99b26" stroke="#000" strokeWidth="1.5" rx="2" />
-          <circle cx="187" cy="35" r="7" fill="#fabc4c" stroke="#000" strokeWidth="2" />
-          <circle cx="187" cy="35" r="2.5" fill="#a62b2b" />
+          {/* Pivot Jewel */}
+          <rect x="181" y="38" width="12" height="12" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+          <rect x="183" y="40" width="3" height="3" fill="#ffffff" />
 
-          {/* Beam (slanted in dynamic balance) */}
-          <line x1="80" y1="56" x2="294" y2="40" stroke="#fabc4c" strokeWidth="5" strokeLinecap="round" />
-          <line x1="80" y1="56" x2="294" y2="40" stroke="#7a5009" strokeWidth="2" strokeLinecap="round" />
+          {/* Tilted Balance Beam */}
+          <g transform="rotate(-6 187 44)">
+            <rect x="60" y="42" width="254" height="8" fill="#d4af37" stroke="#000" strokeWidth="1.5" />
+            <rect x="60" y="42" width="254" height="2" fill="#fef08a" />
+            <rect x="60" y="48" width="254" height="2" fill="#78350f" />
 
-          {/* Left Pan (Lower, with jade weights) */}
-          <line x1="85" y1="56" x2="85" y2="94" stroke="#a62b2b" strokeWidth="2" />
-          <ellipse cx="85" cy="95" rx="36" ry="10" fill="#281e20" stroke="#fabc4c" strokeWidth="2" />
-          {/* Weights */}
-          <circle cx="75" cy="88" r="8" fill="#3ca276" stroke="#000" strokeWidth="1.5" />
-          <rect x="85" y="82" width="16" height="8" rx="2" fill="#fabc4c" stroke="#000" strokeWidth="1.5" />
+            {/* Left Pan (Jade weights) */}
+            <g transform="translate(80, 50)">
+              <rect x="0" y="0" width="2" height="42" fill="#fabc4c" />
+              <rect x="-30" y="42" width="62" height="10" fill="#281e20" stroke="#fabc4c" strokeWidth="1.5" />
+              {/* Weights: 1 + 5 */}
+              <rect x="-22" y="34" width="8" height="8" fill="#fabc4c" stroke="#000" strokeWidth="1" />
+              <rect x="-10" y="32" width="24" height="10" fill="#d99b26" stroke="#000" strokeWidth="1" />
+            </g>
 
-          {/* Right Pan (Higher, with target tribute) */}
-          <line x1="289" y1="40" x2="289" y2="78" stroke="#a62b2b" strokeWidth="2" />
-          <ellipse cx="289" cy="79" rx="36" ry="10" fill="#281e20" stroke="#fabc4c" strokeWidth="2" />
-          {/* Gold Ingot / Bag */}
-          <polygon points="280,72 298,72 294,62 284,62" fill="#d99b26" stroke="#000" strokeWidth="1.5" />
-          <text x="289" y="70" fill="#3a2600" fontSize="7" fontFamily="Press Start 2P" textAnchor="middle">20</text>
+            {/* Right Pan (Tribute target 20) */}
+            <g transform="translate(290, 50)">
+              <rect x="0" y="0" width="2" height="42" fill="#76d4e4" />
+              <rect x="-30" y="42" width="62" height="10" fill="#281e20" stroke="#76d4e4" strokeWidth="1.5" />
+              {/* Gold sack tribute */}
+              <rect x="-12" y="28" width="24" height="14" fill="#76d4e4" stroke="#000" strokeWidth="1" />
+              <text x="0" y="38" fill="#083344" fontSize="7" fontFamily="Press Start 2P" textAnchor="middle">20</text>
+            </g>
+          </g>
         </svg>
       ),
     },
@@ -359,44 +373,62 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
       desc: 'Identifica y resuelve rápidamente retos vigesimales con la concha del cero maya en rachas cronometradas.',
       tags: ['CUENTA LARGA', 'AGILIDAD'],
       bannerIllustration: (
-        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#100f1c]">
-          <defs>
-            <radialGradient id="conchGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#432559" />
-              <stop offset="100%" stopColor="#0d0c18" />
-            </radialGradient>
-          </defs>
-          <rect width="374" height="144" fill="url(#conchGlow)" />
+        <svg viewBox="0 0 374 144" className="w-full h-full bg-[#0d0c18] [image-rendering:pixelated]" shapeRendering="crispEdges">
+          {/* Maya Blue Cosmic Pixel Dither Background */}
+          <rect x="0" y="0" width="374" height="144" fill="#120e24" />
+          <line x1="0" y1="48" x2="374" y2="48" stroke="#080612" strokeWidth="2" />
+          <line x1="0" y1="96" x2="374" y2="96" stroke="#080612" strokeWidth="2" />
 
-          {/* Celestial Astrological Rings */}
-          <circle cx="187" cy="72" r="58" fill="none" stroke="#6366f1" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-          <circle cx="187" cy="72" r="44" fill="none" stroke="#a855f7" strokeWidth="1.5" opacity="0.6" />
+          {/* Dithering stars in Maya Blue (#73c2fb) */}
+          {[
+            [30, 24], [60, 110], [90, 34], [130, 120], [180, 16],
+            [230, 130], [270, 30], [310, 100], [340, 40]
+          ].map(([sx, sy], i) => (
+            <rect key={i} x={sx} y={sy} width="3" height="3" fill="#73c2fb" />
+          ))}
 
-          {/* Sacred Maya Conch Zero Symbol (Large, glowing) */}
-          <g transform="translate(187, 72)">
-            {/* Outer shell contour */}
-            <ellipse cx="0" cy="0" rx="46" ry="30" fill="#fabc4c" stroke="#000" strokeWidth="3" />
-            <ellipse cx="0" cy="0" rx="41" ry="26" fill="#ffe27a" stroke="#d99b26" strokeWidth="1.5" />
-            {/* Horizontal dividing groove */}
-            <line x1="-38" y1="0" x2="38" y2="0" stroke="#3a2600" strokeWidth="3.5" />
-            {/* Vertical shell segments */}
-            <line x1="-20" y1="-20" x2="-20" y2="20" stroke="#3a2600" strokeWidth="2.5" />
-            <line x1="0" y1="-26" x2="0" y2="26" stroke="#3a2600" strokeWidth="2.5" />
-            <line x1="20" y1="-20" x2="20" y2="20" stroke="#3a2600" strokeWidth="2.5" />
+          {/* Large SNES 32x32 Pixel Art Mayan Shell (Zero Symbol) */}
+          <g transform="translate(142, 28)">
+            {/* Shell Outer Contour in Black */}
+            <rect x="12" y="4" width="66" height="80" fill="#000" />
+            <rect x="4" y="12" width="82" height="64" fill="#000" />
+
+            {/* Shell Body Gold */}
+            <rect x="14" y="6" width="62" height="76" fill="#fabc4c" />
+            <rect x="6" y="14" width="78" height="60" fill="#fabc4c" />
+
+            {/* Light Rim Highlight */}
+            <rect x="14" y="6" width="62" height="4" fill="#fef08a" />
+            <rect x="6" y="14" width="4" height="60" fill="#fef08a" />
+
+            {/* Dark Bottom Rim Shadow */}
+            <rect x="14" y="78" width="62" height="4" fill="#b45309" />
+            <rect x="80" y="14" width="4" height="60" fill="#b45309" />
+
+            {/* Internal Conch Carved Grooves */}
+            <rect x="14" y="40" width="62" height="6" fill="#78350f" />
+            <rect x="30" y="14" width="6" height="58" fill="#78350f" />
+            <rect x="54" y="14" width="6" height="58" fill="#78350f" />
+
+            {/* Central Jade Seed Core */}
+            <rect x="36" y="24" width="18" height="16" fill="#76d4e4" />
+            <rect x="38" y="26" width="6" height="6" fill="#ffffff" />
+            <rect x="36" y="46" width="18" height="16" fill="#76d4e4" />
           </g>
 
-          {/* Floating Vigesimal Orbiters */}
-          <circle cx="65" cy="40" r="9" fill="#06b6d4" stroke="#000" strokeWidth="1.5" />
-          <text x="65" y="44" fill="#fff" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">0</text>
+          {/* Orbiting Pixel Zero Badge */}
+          <g transform="translate(50, 48)">
+            <rect x="0" y="0" width="28" height="28" fill="#73c2fb" stroke="#000" strokeWidth="2" />
+            <rect x="2" y="2" width="4" height="4" fill="#ffffff" />
+            <text x="14" y="19" fill="#001830" fontSize="11" fontFamily="Press Start 2P" textAnchor="middle">0</text>
+          </g>
 
-          <circle cx="305" cy="100" r="9" fill="#10b981" stroke="#000" strokeWidth="1.5" />
-          <text x="305" y="104" fill="#000" fontSize="8" fontFamily="Press Start 2P" textAnchor="middle">20</text>
-
-          {/* Stars */}
-          <circle cx="45" cy="90" r="1.5" fill="#fff" />
-          <circle cx="110" cy="120" r="1.5" fill="#ffe27a" />
-          <circle cx="280" cy="30" r="2" fill="#ffe27a" />
-          <circle cx="335" cy="50" r="1.5" fill="#fff" />
+          {/* Orbiting Pixel 20 Badge */}
+          <g transform="translate(296, 68)">
+            <rect x="0" y="0" width="34" height="28" fill="#3ca276" stroke="#000" strokeWidth="2" />
+            <rect x="2" y="2" width="4" height="4" fill="#ffffff" />
+            <text x="17" y="19" fill="#052414" fontSize="9" fontFamily="Press Start 2P" textAnchor="middle">20</text>
+          </g>
         </svg>
       ),
     },
@@ -408,147 +440,137 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
     return game.category === selectedFilter;
   });
 
+  const SENDA_LEVEL_MAP: Record<string, { level: string; label: string }> = {
+    kukulcan: { level: 'NIVEL 1', label: 'SENDA DE KUKULKÁN' },
+    memorama: { level: 'NIVEL 2', label: 'MÁSCARAS GEMELAS' },
+    balanza: { level: 'NIVEL 3', label: 'BALANZA DE JADE' },
+    tetris: { level: 'NIVEL 4', label: 'TETRIS AZTECA' },
+    cero: { level: 'NIVEL 5', label: 'DESAFÍO ARITMÉTICO' },
+  };
+
   return (
-    <div className="w-full max-w-[400px] mx-auto px-2 py-3 pb-24 font-silkscreen select-none text-[#f4efe6]">
+    <div className="w-full max-w-[440px] mx-auto px-2.5 py-3 pb-36 font-silkscreen select-none text-[#FFFDF2]">
       {/* Return to Feed Bar */}
       {onBackToFeed && (
         <div className="w-full flex items-center justify-between pb-3">
           <button
             onClick={onBackToFeed}
-            className="flex items-center gap-1.5 text-[9px] text-[#ffdeac] hover:text-[#fabc4c] font-press-start bg-[#20201f] hover:bg-[#2a2a2a] px-3 py-1.5 rounded-[2px] border border-[#353535] [box-shadow:0px_0px_0px_#0e0e0e,_inset_1.5px_1.5px_0px_#ffffff33,_inset_-1.5px_-1.5px_0px_#00000099] cursor-pointer transition"
+            className="flex items-center gap-1.5 text-[9.5px] text-[#FFFDF2] hover:text-[#2A7B4C] font-press-start bg-[#180a0c] hover:bg-[#261013] px-3 py-2 border border-[#9E2A2B]/70 [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff22] cursor-pointer transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>← VOLVER AL FEED</span>
           </button>
-          <span className="font-press-start text-[7.5px] text-[#fabc4c] bg-[#120d0e] px-2 py-1 border border-[#7a5009] rounded-[2px]">
+          <span className="font-press-start text-[8.5px] text-[#2A7B4C] bg-[#070203] px-2.5 py-1 border border-[#2A7B4C]/60 [box-shadow:1px_1px_0px_#000]">
             {filteredGames.length} CARTUCHOS
           </span>
         </div>
       )}
 
-      {/* ── SECTION: FILTROS ARCADE ── */}
-      <div className="w-full flex flex-col gap-[8px] pt-[2px] pb-3">
+      {/* ── SECTION: FILTROS ARCADE SNES ── */}
+      <div className="w-full flex flex-col gap-2 pt-[2px] pb-3">
         {/* Title row */}
         <div className="w-full flex justify-between items-center">
-          <div className="flex items-center gap-1.5">
-            {/* Diamond Mayan Icon */}
-            <svg viewBox="0 0 9.038 9.038" className="w-[9px] h-[9px] fill-[#d99b26]">
-              <path d="M4.52148 0l2.01661 2.02148-2.01661 2.02148-2.02148-2.02148 2.02148-2.02148m0 5l2.01661 2.02148-2.01661 2.02148-2.02148-2.02148 2.02148-2.02148m2.5-2.5l2.01661 2.02148-2.01661 2.02148-2.02148-2.02148 2.02148-2.02148m-5 0l2.01661 2.02148-2.01661 2.02148-2.02148-2.02148 2.02148-2.02148" />
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 10 10" className="w-3 h-3 fill-[#2A7B4C] [image-rendering:pixelated]" shapeRendering="crispEdges">
+              <rect x="4" y="0" width="2" height="2" />
+              <rect x="2" y="2" width="6" height="2" />
+              <rect x="0" y="4" width="10" height="2" />
+              <rect x="2" y="6" width="6" height="2" />
+              <rect x="4" y="8" width="2" height="2" />
             </svg>
-            <span className="text-[8.5px]/[12px] text-[#f9f6f0] font-press-start tracking-[0.4px]">
-              Minijuegos
+            <span className="text-[11px]/[16px] font-['Press_Start_2P',system-ui,sans-serif] text-[#FFFDF2] font-bold tracking-tight">
+              SALA DE MAQUINITAS
             </span>
           </div>
-
-          <span className="text-[7.5px] text-[#a78a87] font-silkscreen">
-            CATÁLOGO 32-BIT
+          <span className="text-[8.5px] font-press-start text-[#2A7B4C]">
+            SNES 32-BIT
           </span>
         </div>
 
-        {/* Real-time Category Filter Buttons */}
-        <div className="w-full flex flex-row gap-[5px] justify-between items-center">
-          {(['TODOS', 'MEMORIA', 'ANALISIS', 'VELOCIDAD'] as FilterCategory[]).map((category) => {
-            const isActive = selectedFilter === category;
+        {/* Filter Pills / Tabs */}
+        <div className="w-full flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {(['TODOS', 'MEMORIA', 'ANALISIS', 'VELOCIDAD'] as FilterCategory[]).map((cat) => {
+            const isSelected = selectedFilter === cat;
             return (
               <button
-                key={category}
-                onClick={() => setSelectedFilter(category)}
-                className={`flex-1 py-[6px] px-[4px] flex justify-center items-center cursor-pointer transition active:scale-95 [border-width:1px] [border-style:solid] [box-shadow:2px_2px_0px_#000000] rounded-[2px] ${
-                  isActive
-                    ? 'bg-[#b8261e] border-[#a62b2b] text-[#f9f6f0]'
-                    : 'bg-[#d4af37] hover:bg-[#e5c158] border-[#a62b2b] text-[#1a1a1a]'
+                key={cat}
+                onClick={() => setSelectedFilter(cat)}
+                className={`px-3 py-1.5 text-[8.5px] font-press-start cursor-pointer transition-all border ${
+                  isSelected
+                    ? 'bg-[#2A7B4C] text-[#FFFDF2] border-black [box-shadow:2px_2px_0px_#000,_inset_1px_1px_0px_#ffffff44]'
+                    : 'bg-[#180a0c] text-[#a89b88] hover:text-[#FFFDF2] border-[#381518] [box-shadow:1px_1px_0px_#000]'
                 }`}
               >
-                <span className="text-[7px] font-press-start leading-none tracking-tight">
-                  {category}
-                </span>
+                {cat}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── SECTION: CARDS DE JUEGOS (HERO BANNER 144px + JUGAR LIBRE) ── */}
-      <div className="w-full flex flex-col gap-[16px] items-center">
+      {/* ── SECTION: CARDS DE JUEGOS (SNES CARTRIDGES) ── */}
+      <div className="w-full flex flex-col gap-4 items-center">
         {filteredGames.map((game) => (
           <div
             key={game.id}
-            data-pencil-name={`Article - ${game.title}`}
-            className="box-border w-full h-fit shrink-0 flex flex-col gap-0 justify-start items-start bg-[#20201fff] rounded-[8px] overflow-hidden border border-[#353535] [box-shadow:0px_4px_10px_#00000080]"
+            className="w-full flex flex-col bg-[#180a0c] border-2 border-[#2A7B4C] [box-shadow:3px_3px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff18] overflow-hidden"
           >
-            {/* Top 144px Hero Background */}
-            <div
-              data-pencil-name="Background"
-              className="box-border w-full h-[144px] shrink-0 flex flex-col gap-0 justify-center items-start bg-[#0e0e0eff] overflow-hidden relative"
-            >
-              {/* Graphic/Illustration layer */}
-              <div className="box-border w-full [flex:1_1_0] overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-[inherit] [z-index:0]">
-                  {game.bannerIllustration}
-                </div>
+            {/* Top 144px Hero SNES Pixel Art Banner */}
+            <div className="w-full h-[144px] bg-[#070203] relative overflow-hidden border-b-2 border-[#2A7B4C]">
+              <div className="w-full h-full">
+                {game.bannerIllustration}
               </div>
 
-              {/* Gradient 0% to 100% overlay */}
-              <div
-                data-pencil-name="Gradient"
-                className="box-border w-full h-[144px] absolute left-0 top-0 [background-image:linear-gradient(0deg,_#20201fff_0%,_#20201f4d_50%,_#20201f00_100%)] bg-no-repeat bg-[length:100%_100%] [z-index:1] pointer-events-none"
-              />
-
-              {/* Top-left Badge: Category */}
-              <div
-                data-pencil-name="Background"
-                className="box-border w-fit h-fit absolute left-[8px] top-[8px] flex flex-col gap-0 p-[2px_8px] justify-start items-start bg-[#bd8717ff] rounded-[4px] [z-index:2]"
-              >
-                <div
-                  data-pencil-name="Overlay+Shadow"
-                  className="box-border w-full h-full [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] absolute left-0 top-0 bg-[#ffffff00] rounded-[4px] [z-index:0] pointer-events-none"
-                />
-                <div
-                  data-pencil-name="Text"
-                  className="text-[7px]/[11px] box-border text-[#3a2600ff] font-['Press_Start_2P',system-ui,sans-serif] font-normal text-left [white-space:nowrap] relative [z-index:1]"
-                >
+              {/* Top-left Badge */}
+              <div className="absolute left-2 top-2 px-2 py-1 bg-[#9E2A2B] border border-black [box-shadow:1px_1px_0px_#000] z-10">
+                <span className="text-[8px] text-[#FFFDF2] font-press-start font-bold">
                   {game.badge}
-                </div>
+                </span>
               </div>
 
-              {/* Top-right Badge: Record */}
-              <div
-                data-pencil-name="Background"
-                className="box-border w-fit h-fit absolute right-[8px] top-[8px] flex flex-col gap-0 p-[2px_8px] justify-start items-start bg-[#1c2e26ff] rounded-[4px] [z-index:3]"
-              >
-                <div
-                  data-pencil-name="Overlay+Shadow"
-                  className="box-border w-full h-full [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff33,_inset_-2px_-2px_0px_#00000099] absolute left-0 top-0 bg-[#ffffff00] rounded-[4px] [z-index:0] pointer-events-none"
-                />
-                <div
-                  data-pencil-name="Text"
-                  className="text-[7px]/[11px] box-border text-[#80d5aeff] font-['Press_Start_2P',system-ui,sans-serif] font-normal text-left [white-space:nowrap] relative [z-index:1]"
-                >
+              {/* Top-right Record */}
+              <div className="absolute right-2 top-2 px-2 py-1 bg-[#06140c] border border-[#2A7B4C] [box-shadow:1px_1px_0px_#000] z-10">
+                <span className="text-[8px] text-[#86efac] font-press-start font-bold">
                   {game.record}
-                </div>
+                </span>
               </div>
             </div>
 
             {/* Lower Content Container */}
-            <div className="box-border w-full flex flex-col gap-[10px] p-[12px] bg-[#20201fff] relative z-10">
-              {/* Title & Description */}
-              <div className="flex flex-col gap-[4px]">
-                <h4 className="text-[11px]/[16px] text-[#f5ebd2] font-['Press_Start_2P',system-ui,sans-serif] tracking-tight">
+            <div className="w-full flex flex-col gap-3 p-3.5 bg-[#14080a]">
+              {/* Senda Integration Badge */}
+              {SENDA_LEVEL_MAP[game.id] && (
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#06140c] border border-[#2A7B4C] [box-shadow:1px_1px_0px_#000]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#2A7B4C] animate-pulse" />
+                    <span className="text-[8px] font-press-start text-[#86efac]">
+                      JUGABLE EN SENDA
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-press-start text-[#FFFDF2]">
+                    {SENDA_LEVEL_MAP[game.id].level}
+                  </span>
+                </div>
+              )}
+
+              {/* Title & Description with enhanced contrast */}
+              <div className="flex flex-col gap-1.5">
+                <h4 className="text-[12.5px] text-[#FFFDF2] font-press-start tracking-tight">
                   {game.title}
                 </h4>
-                <p className="text-[9.5px]/[14px] text-[#a78a87] font-['Space_Mono',monospace]">
+                <p className="text-[11px]/[17px] text-[#e0d6c4] font-['Space_Mono',monospace]">
                   {game.desc}
                 </p>
               </div>
 
               {/* Tags Row */}
-              <div className="flex flex-row gap-[6px] items-center">
+              <div className="flex flex-row gap-1.5 items-center flex-wrap">
                 {game.tags.map((tag) => (
                   <div
                     key={tag}
-                    className="box-border w-fit h-fit flex flex-col gap-0 p-[2px_6px] justify-start items-start bg-[#141414] border border-[#3a3535] rounded-[3px]"
+                    className="px-2 py-1 bg-[#070203] border border-[#9E2A2B]/70"
                   >
-                    <span className="text-[7px]/[11px] text-[#ffdeac] font-['Press_Start_2P',system-ui,sans-serif]">
+                    <span className="text-[8px] text-[#FFFDF2] font-press-start font-medium">
                       {tag}
                     </span>
                   </div>
@@ -556,34 +578,16 @@ export const MinigamesHub: React.FC<MinigamesHubProps> = ({
               </div>
 
               {/* Button: JUGAR LIBRE */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveGame(game.engine)}
-                data-pencil-name="Button - JUGAR LIBRE"
-                className="box-border w-full h-fit shrink-0 cursor-pointer active:scale-[0.98] transition-transform select-none relative flex flex-row justify-center items-center p-[10px_0px] bg-[#bd8717ff] hover:bg-[#d49c25] rounded-[4px] mt-1"
+                className="w-full py-3 bg-[#2A7B4C] hover:bg-[#34985e] text-[#FFFDF2] font-silkscreen font-bold text-[11px] tracking-wider border-2 border-black [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff66] cursor-pointer active:translate-y-0.5 transition"
               >
-                <div
-                  data-pencil-name="Overlay+Shadow"
-                  className="box-border w-full h-full [box-shadow:0px_0px_0px_#0e0e0e,_inset_2px_2px_0px_#ffffff4d,_inset_-2px_-2px_0px_#00000099] absolute left-0 top-0 bg-[#ffffff00] rounded-[4px] [z-index:1] pointer-events-none"
-                />
-                <div
-                  data-pencil-name="Text"
-                  className="text-[10.5px]/[15px] box-border text-[#2a1a00] font-['Silkscreen',system-ui,sans-serif] font-bold text-center tracking-[0.8px] [white-space:nowrap] relative [z-index:2]"
-                >
-                  JUGAR LIBRE ▶
-                </div>
-              </div>
+                JUGAR LIBRE ▶
+              </button>
             </div>
           </div>
         ))}
-
-        {filteredGames.length === 0 && (
-          <div className="w-full text-center py-8 bg-[#120d0e] border border-[#a62b2b] p-4 text-[#8a7e66] rounded-[4px]">
-            <span className="text-xl mb-1 block">🔍</span>
-            <span className="text-[8px] font-press-start text-[#fabc4c]">
-              No hay minijuegos en esta categoría.
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );

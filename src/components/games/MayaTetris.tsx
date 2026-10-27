@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, RotateCw, ArrowDown, ArrowLeft as MoveLeft, ArrowRight as MoveRight, Zap, RefreshCw, Trophy, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, RotateCw, ArrowDown, ArrowLeft as MoveLeft, ArrowRight as MoveRight, Zap, RefreshCw, Star } from 'lucide-react';
 import { GameNode } from '../../types';
 import { GrecaBar } from '../GrecaBar';
 
@@ -11,9 +11,28 @@ interface MayaTetrisProps {
   onVictory?: (stars: number, coins: number) => void;
 }
 
+interface SnesTileStyle {
+  main: string;
+  light: string;
+  dark: string;
+  glyph: string;
+  detail: string;
+}
+
+const SNES_PALETTES: Record<string, SnesTileStyle> = {
+  '#10b981': { main: '#10b981', light: '#6ee7b7', dark: '#047857', glyph: '#022c22', detail: '#a7f3d0' }, // Jade
+  '#06b6d4': { main: '#06b6d4', light: '#67e8f9', dark: '#0e7490', glyph: '#083344', detail: '#a5f3fc' }, // Turquesa
+  '#f59e0b': { main: '#f59e0b', light: '#fde68a', dark: '#b45309', glyph: '#451a03', detail: '#fef08a' }, // Ámbar Solar
+  '#fbbf24': { main: '#fbbf24', light: '#fef08a', dark: '#d97706', glyph: '#78350f', detail: '#fffbeb' }, // Oro Ceremonial
+  '#22c55e': { main: '#22c55e', light: '#86efac', dark: '#15803d', glyph: '#052e16', detail: '#bbf7d0' }, // Selva Esmeralda
+  '#ef4444': { main: '#ef4444', light: '#fca5a5', dark: '#b91c1c', glyph: '#450a0a', detail: '#fecaca' }, // Rubí Fuego
+  '#a855f7': { main: '#a855f7', light: '#d8b4fe', dark: '#7e22ce', glyph: '#3b0764', detail: '#f3e8ff' }, // Obsidiana Amatista
+  'default': { main: '#d99b26', light: '#fbbf24', dark: '#78350f', glyph: '#451a03', detail: '#fef3c7' },
+};
+
 const COLS = 10;
 const ROWS = 20;
-const BLOCK_SIZE = 20; // 20px per block fits standard mobile screens (200px width board)
+const BLOCK_SIZE = 24; // 24px: 240x480 crisp SNES 32-bit resolution
 
 // 7 Tetrominoes with Mayan colors and textures
 const SHAPES = [
@@ -39,15 +58,16 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(1);
   const [gameOver, setGameOver] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused] = useState(false);
   const [mathBonusActive, setMathBonusActive] = useState(false);
   const [victoryCelebration, setVictoryCelebration] = useState(false);
+
   const targetLinesForNode = node ? 4 : 999;
 
-  // Sound generator using Web Audio API
+  // Web Audio 8-bit sound generator
   const playSound = useCallback((freq: number, type: OscillatorType = 'square', duration = 0.08) => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = type;
@@ -101,8 +121,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
         if (piece.shape[r][c] && gridRef.current[piece.y + r]?.[piece.x + c]) {
           setGameOver(true);
           playSound(150, 'sawtooth', 0.4);
-
-          // If node was played and some lines were cleared, calculate result
           if (node && onVictory) {
             const earnedStars = score >= 800 ? 3 : score >= 400 ? 2 : 1;
             const earnedCoins = earnedStars * 40 + (node.isBoss ? 80 : 30);
@@ -112,7 +130,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
         }
       }
     }
-
     currentPieceRef.current = piece;
     return true;
   }, [playSound, node, onVictory, score]);
@@ -176,7 +193,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
         }
       }
     }
-
     playSound(180, 'square', 0.06);
 
     // Clear completed lines
@@ -196,7 +212,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
       playSound(520 + cleared * 120, 'square', 0.2);
       const points = [0, 100, 300, 500, 800][cleared] * level;
       setScore((s) => s + points);
-
       setLines((prev) => {
         const next = prev + cleared;
         setLevel(Math.floor(next / 10) + 1);
@@ -210,7 +225,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
           if (onVictory) onVictory(earnedStars, earnedCoins);
           if (onReward) onReward(earnedCoins);
         }
-
         return next;
       });
 
@@ -267,7 +281,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
     return () => clearInterval(interval);
   }, [gameOver, isPaused, victoryCelebration, level, handleDrop]);
 
-  // Canvas Render Loop
+  // Canvas Render Loop with SNES 32x32 Quad-Bevel Rendering
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -276,31 +290,84 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
 
     let animId: number;
 
-    const drawBlock = (x: number, y: number, color: string) => {
+    // SNES 32-bit Quad-beveled Stone Tile Generator
+    const drawBlock = (x: number, y: number, colorKey: string) => {
       const px = x * BLOCK_SIZE;
       const py = y * BLOCK_SIZE;
+      const style = SNES_PALETTES[colorKey] || SNES_PALETTES['default'];
 
-      ctx.fillStyle = color;
+      // 1. Black outer mortar border
+      ctx.fillStyle = '#060606';
+      ctx.fillRect(px, py, BLOCK_SIZE, BLOCK_SIZE);
+
+      // 2. Base stone face
+      ctx.fillStyle = style.main;
       ctx.fillRect(px + 1, py + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
 
-      // Carved stone border
-      ctx.strokeStyle = '#00000088';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(px + 1, py + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      // 3. SNES Quad Bevels (Light top/left, Dark bottom/right)
+      // Top light bevel (2px)
+      ctx.fillStyle = style.light;
+      ctx.fillRect(px + 1, py + 1, BLOCK_SIZE - 2, 2);
+      // Left light bevel (2px)
+      ctx.fillRect(px + 1, py + 1, 2, BLOCK_SIZE - 2);
 
-      // Inner glyph highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.fillRect(px + 4, py + 4, BLOCK_SIZE - 8, BLOCK_SIZE - 8);
+      // Bottom dark bevel (2px)
+      ctx.fillStyle = style.dark;
+      ctx.fillRect(px + 1, py + BLOCK_SIZE - 3, BLOCK_SIZE - 2, 2);
+      // Right dark bevel (2px)
+      ctx.fillRect(px + BLOCK_SIZE - 3, py + 1, 2, BLOCK_SIZE - 2);
+
+      // 4. Corner rivets (4 SNES stone anchor studs)
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(px + 2, py + 2, 2, 2);
+      ctx.fillRect(px + BLOCK_SIZE - 4, py + 2, 2, 2);
+      ctx.fillRect(px + 2, py + BLOCK_SIZE - 4, 2, 2);
+      ctx.fillRect(px + BLOCK_SIZE - 4, py + BLOCK_SIZE - 4, 2, 2);
+
+      // Rivet specular highlights
+      ctx.fillStyle = '#ffffff88';
+      ctx.fillRect(px + 2, py + 2, 1, 1);
+      ctx.fillRect(px + BLOCK_SIZE - 4, py + 2, 1, 1);
+
+      // 5. Engraved Central Mayan Hieroglyph (Sun Disk / Bar Relief)
+      const cx = px + Math.floor(BLOCK_SIZE / 2);
+      const cy = py + Math.floor(BLOCK_SIZE / 2);
+
+      // Chiseled groove (dark inset)
+      ctx.fillStyle = style.glyph;
+      ctx.fillRect(cx - 4, cy - 4, 8, 8);
+
+      // Stone core
+      ctx.fillStyle = style.main;
+      ctx.fillRect(cx - 3, cy - 3, 6, 6);
+
+      // Mayan rune cross / diamond
+      ctx.fillStyle = style.detail;
+      ctx.fillRect(cx - 2, cy - 1, 4, 2);
+      ctx.fillRect(cx - 1, cy - 2, 2, 4);
+      ctx.fillStyle = '#00000044';
+      ctx.fillRect(cx - 1, cy - 1, 2, 2);
     };
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#141414';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Temple dungeon stone background with alternating masonry
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const isOffset = (r % 2 === 0 ? c % 2 === 0 : c % 2 === 1);
+          ctx.fillStyle = isOffset ? '#120f0e' : '#191513';
+          ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
 
-      // Grid lines
-      ctx.strokeStyle = '#222222';
+          // Subtle stone texture specks
+          ctx.fillStyle = '#221b18';
+          ctx.fillRect(c * BLOCK_SIZE + 2, r * BLOCK_SIZE + 2, 2, 2);
+          ctx.fillRect(c * BLOCK_SIZE + BLOCK_SIZE - 4, r * BLOCK_SIZE + BLOCK_SIZE - 4, 2, 2);
+        }
+      }
+
+      // Stone mortar grid seams
+      ctx.strokeStyle = '#090706';
       ctx.lineWidth = 1;
       for (let x = 0; x <= COLS; x++) {
         ctx.beginPath();
@@ -315,11 +382,11 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
         ctx.stroke();
       }
 
-      // Board blocks
+      // Board placed blocks
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           if (gridRef.current[r][c]) {
-            drawBlock(c, r, colorsRef.current[r][c] || '#d99b26');
+            drawBlock(c, r, colorsRef.current[r][c] || '#fbbf24');
           }
         }
       }
@@ -350,7 +417,6 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
     setLines(0);
     setLevel(1);
     setGameOver(false);
-    setIsPaused(false);
     setVictoryCelebration(false);
     spawnPiece();
   };
@@ -360,26 +426,26 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
       <GrecaBar />
 
       {/* Top Header */}
-      <div className="bg-[#1e1916] border-2 border-[#a62b2b] p-2.5 rounded-lg flex items-center justify-between shadow-md">
+      <div className="bg-[#1e1916] border-2 border-[#a62b2b] p-2.5 rounded-none [box-shadow:3px_3px_0px_#000000,_inset_2px_2px_0px_#ffffff22,_inset_-2px_-2px_0px_#00000088] flex items-center justify-between">
         <button
           onClick={onClose}
-          className="px-2.5 py-1 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded font-silkscreen text-[11px] flex items-center gap-1 cursor-pointer"
+          className="px-2.5 py-1 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#d99b26] border border-[#444] rounded-none font-silkscreen text-[11px] flex items-center gap-1 cursor-pointer [box-shadow:2px_2px_0px_#000000]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Salir
         </button>
 
         <div className="text-center">
           <h2 className="font-press-start text-[11px] sm:text-xs text-[#fbbf24]">
-            {node ? node.title : 'TETRIS MAYA · MAZORCAS'}
+            {node ? node.title : 'TETRIS MAYA · SNES 32-BIT'}
           </h2>
           <span className="font-silkscreen text-[10px] text-[#a39c8f]">
-            {node ? `Objetivo: Limpiar ${targetLinesForNode} líneas` : 'Modo Freeplay'}
+            {node ? `Objetivo: Limpiar ${targetLinesForNode} líneas` : 'Modo Arcade Vigesimal'}
           </span>
         </div>
 
         <button
           onClick={restartGame}
-          className="p-1 bg-[#a62b2b] hover:bg-[#c0392b] text-white rounded border border-[#d99b26] cursor-pointer"
+          className="p-1.5 bg-[#a62b2b] hover:bg-[#c0392b] text-white rounded-none border border-[#d99b26] cursor-pointer [box-shadow:2px_2px_0px_#000000]"
           title="Reiniciar"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -389,18 +455,20 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
       {/* Game Layout */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         {/* Board Canvas */}
-        <div className="relative border-2 sm:border-4 border-[#a62b2b] rounded-lg shadow-xl overflow-hidden bg-[#141414]">
+        <div className="relative border-4 border-[#7a5009] [box-shadow:4px_4px_0px_#000000,_inset_2px_2px_0px_#ffffff22,_inset_-2px_-2px_0px_#000000aa] bg-[#0c0a09] p-1">
           <canvas
             ref={canvasRef}
             width={COLS * BLOCK_SIZE}
             height={ROWS * BLOCK_SIZE}
-            className="block"
+            className="block [image-rendering:pixelated]"
           />
 
           {/* Victory Modal */}
           {victoryCelebration && (
-            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-2">
-              <div className="text-3xl">👑</div>
+            <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-4 text-center space-y-2 border-2 border-[#22c55e]">
+              <div className="w-10 h-10 bg-[#22c55e] border-2 border-black [box-shadow:2px_2px_0px_#000000] flex items-center justify-center font-press-start text-xs text-black">
+                ★
+              </div>
               <h3 className="font-press-start text-xs text-[#22c55e]">
                 ¡NODO SUPERADO!
               </h3>
@@ -414,7 +482,7 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
               </div>
               <button
                 onClick={onClose}
-                className="px-3 py-1.5 bg-[#d99b26] text-black font-press-start text-[10px] rounded retro-button cursor-pointer"
+                className="px-3 py-1.5 bg-[#d99b26] text-black font-press-start text-[10px] rounded-none retro-button cursor-pointer [box-shadow:2px_2px_0px_#000]"
               >
                 CONTINUAR SENDA
               </button>
@@ -423,8 +491,10 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
 
           {/* Game Over Modal */}
           {gameOver && !victoryCelebration && (
-            <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center space-y-3">
-              <div className="text-3xl">🗿</div>
+            <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-4 text-center space-y-3 border-2 border-[#ef4444]">
+              <div className="w-10 h-10 bg-[#ef4444] border-2 border-black [box-shadow:2px_2px_0px_#000000] flex items-center justify-center font-press-start text-xs text-white">
+                ✕
+              </div>
               <h3 className="font-press-start text-xs text-[#ef4444]">
                 ¡TEMPLO LLENO!
               </h3>
@@ -434,13 +504,13 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
               <div className="flex gap-2">
                 <button
                   onClick={restartGame}
-                  className="px-3 py-1 bg-[#d99b26] text-black font-press-start text-[10px] rounded retro-button cursor-pointer"
+                  className="px-3 py-1.5 bg-[#d99b26] text-black font-press-start text-[10px] rounded-none cursor-pointer [box-shadow:2px_2px_0px_#000]"
                 >
                   REINTENTAR
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-3 py-1 bg-[#333] text-white font-press-start text-[10px] rounded cursor-pointer"
+                  className="px-3 py-1.5 bg-[#333] text-white font-press-start text-[10px] rounded-none cursor-pointer [box-shadow:2px_2px_0px_#000]"
                 >
                   VOLVER
                 </button>
@@ -449,21 +519,19 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
           )}
         </div>
 
-        {/* Stats on Side / Bottom */}
+        {/* Stats on Side / Bottom with SNES Bevels */}
         <div className="w-full sm:w-44 flex flex-row sm:flex-col justify-around sm:justify-start gap-2 text-center">
-          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+          <div className="flex-1 p-2 bg-[#191512] border-2 border-[#58413f] [box-shadow:2px_2px_0px_#000000,_inset_1px_1px_0px_#ffffff22]">
             <span className="font-silkscreen text-[9px] text-[#8e8576] block">PUNTOS</span>
             <span className="font-press-start text-xs text-[#fbbf24]">{score}</span>
           </div>
-
-          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+          <div className="flex-1 p-2 bg-[#191512] border-2 border-[#58413f] [box-shadow:2px_2px_0px_#000000,_inset_1px_1px_0px_#ffffff22]">
             <span className="font-silkscreen text-[9px] text-[#8e8576] block">LÍNEAS</span>
             <span className="font-press-start text-xs text-[#22c55e]">
               {lines} {node ? `/${targetLinesForNode}` : ''}
             </span>
           </div>
-
-          <div className="flex-1 p-2 bg-[#191512] border border-[#33261c] rounded">
+          <div className="flex-1 p-2 bg-[#191512] border-2 border-[#58413f] [box-shadow:2px_2px_0px_#000000,_inset_1px_1px_0px_#ffffff22]">
             <span className="font-silkscreen text-[9px] text-[#8e8576] block">NIVEL</span>
             <span className="font-press-start text-xs text-[#06b6d4]">{level}</span>
           </div>
@@ -471,45 +539,45 @@ export const MayaTetris: React.FC<MayaTetrisProps> = ({ node, onClose, onReward,
       </div>
 
       {mathBonusActive && (
-        <div className="p-2 bg-[#2b200b] border border-[#fbbf24] rounded text-center text-[10px] font-press-start text-[#fbbf24] animate-pulse">
+        <div className="p-2 bg-[#2b200b] border-2 border-[#fbbf24] rounded-none text-center text-[10px] font-press-start text-[#fbbf24] animate-pulse [box-shadow:2px_2px_0px_#000000]">
           ✨ ¡BONIFICACIÓN SOLAR VIGESIMAL ACTIVADA!
         </div>
       )}
 
-      {/* Touch D-Pad for Mobile */}
+      {/* SNES D-Pad Controls for Mobile */}
       <div className="w-full max-w-xs mx-auto grid grid-cols-3 gap-2 pt-1">
         <button
           onClick={() => handleMove(-1)}
-          className="h-12 bg-[#26201b] hover:bg-[#342b24] border border-[#4a3b2f] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          className="h-12 bg-[#26201b] hover:bg-[#342b24] border-2 border-[#58413f] [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff22] flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
           title="Izquierda"
         >
           <MoveLeft className="w-5 h-5 text-[#fbbf24]" />
         </button>
         <button
           onClick={handleRotate}
-          className="h-12 bg-[#a62b2b] hover:bg-[#ba3232] border border-[#d99b26] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          className="h-12 bg-[#a62b2b] hover:bg-[#ba3232] border-2 border-[#d99b26] [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff33] flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
           title="Rotar"
         >
           <RotateCw className="w-5 h-5 text-white" />
         </button>
         <button
           onClick={() => handleMove(1)}
-          className="h-12 bg-[#26201b] hover:bg-[#342b24] border border-[#4a3b2f] rounded flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
+          className="h-12 bg-[#26201b] hover:bg-[#342b24] border-2 border-[#58413f] [box-shadow:2px_2px_0px_#000,_inset_1.5px_1.5px_0px_#ffffff22] flex items-center justify-center font-press-start cursor-pointer active:translate-y-0.5"
           title="Derecha"
         >
           <MoveRight className="w-5 h-5 text-[#fbbf24]" />
         </button>
         <button
           onClick={handleDrop}
-          className="col-span-2 h-11 bg-[#201b17] hover:bg-[#2e2620] border border-[#44362b] rounded flex items-center justify-center gap-1 font-silkscreen text-xs text-[#a39c8f] cursor-pointer active:translate-y-0.5"
+          className="col-span-2 h-11 bg-[#201b17] hover:bg-[#2e2620] border-2 border-[#44362b] [box-shadow:2px_2px_0px_#000,_inset_1px_1px_0px_#ffffff22] flex items-center justify-center gap-1 font-silkscreen text-xs text-[#a39c8f] cursor-pointer active:translate-y-0.5"
         >
           <ArrowDown className="w-4 h-4 text-[#22c55e]" /> Caída Suave
         </button>
         <button
           onClick={handleHardDrop}
-          className="h-11 bg-[#14291c] hover:bg-[#1f3d2a] border border-[#22c55e] rounded flex items-center justify-center font-silkscreen text-xs text-[#22c55e] cursor-pointer active:translate-y-0.5 font-bold"
+          className="h-11 bg-[#14291c] hover:bg-[#1f3d2a] border-2 border-[#22c55e] [box-shadow:2px_2px_0px_#000,_inset_1px_1px_0px_#ffffff33] flex items-center justify-center font-silkscreen text-xs text-[#22c55e] cursor-pointer active:translate-y-0.5 font-bold"
         >
-          <Zap className="w-4 h-4" /> Caída
+          <Zap className="w-4 h-4" /> Caída Rápida
         </button>
       </div>
 

@@ -10,6 +10,8 @@ import { FeedView } from './components/FeedView';
 import { SenderoMap } from './components/SenderoMap';
 import { MayaTetris } from './components/games/MayaTetris';
 import { MayaMemorama } from './components/games/MayaMemorama';
+import { BalanzaSagrada } from './components/games/BalanzaSagrada';
+import { KukulcanOrbs } from './components/games/KukulcanOrbs';
 import { MinigamesHub } from './components/games/MinigamesHub';
 import { CodexView } from './components/CodexView';
 import { NodeDetailModal } from './components/NodeDetailModal';
@@ -68,7 +70,7 @@ export const App: React.FC = () => {
 
   // Active game session
   const [playingNode, setPlayingNode] = useState<GameNode | null>(null);
-  const [activeGameType, setActiveGameType] = useState<'tetris' | 'memorama' | null>(null);
+  const [activeGameType, setActiveGameType] = useState<'tetris' | 'memorama' | 'balanza' | 'kukulcan' | null>(null);
   const [isArcadePlaying, setIsArcadePlaying] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GameNode | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -188,7 +190,7 @@ export const App: React.FC = () => {
   };
 
   // Play Level from Sendero Map (5 Levels)
-  const handlePlayLevel = (levelNumber: number, title: string, gameType: 'tetris' | 'memorama') => {
+  const handlePlayLevel = (levelNumber: number, title: string, gameType: 'tetris' | 'memorama' | 'balanza' | 'kukulcan') => {
     const energyCost = levelNumber === 4 ? 2 : levelNumber === 5 ? 3 : 1;
     if (jadeEnergy < energyCost) {
       setEnergyAlert(`¡Energía de Jade insuficiente (${jadeEnergy}/10)! Necesitas ${energyCost} pts. Se recarga en 24h.`);
@@ -246,7 +248,7 @@ export const App: React.FC = () => {
 
   if (loadingInitial) {
     return (
-      <div className="relative min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 overflow-hidden">
+      <div className="relative min-h-screen bg-[#100506] flex flex-col items-center justify-center p-4 overflow-hidden">
         <CosmicBackground speed={0.8} dimmed={true} interactive={false} />
         <PixelArtSpinner size="lg" message="CONSULTANDO EL CÓDICE SAGRADO..." />
       </div>
@@ -254,19 +256,16 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#0f141c] text-[#f4efe6] flex flex-col justify-between selection:bg-[#d99b26] selection:text-black">
-      {/* Cosmic background with ordered dithering & deep Mayan blue (dimmed for feed content readability) */}
-      {user && activeTab === 'feed' && !activeGameType && !isArcadePlaying && (
-        <CosmicBackground speed={0.65} dimmed={true} interactive={true} />
+    <div className="relative min-h-screen bg-transparent text-[#FFFDF2] flex flex-col justify-between selection:bg-[#2A7B4C] selection:text-[#FFFDF2]">
+      {/* Fondo cósmico persistente para TODAS las pantallas (Feed, Sendero, Arcade, Códice, Login) */}
+      {!activeGameType && !isArcadePlaying && (
+        <CosmicBackground speed={user ? 0.65 : 1.0} dimmed={Boolean(user)} interactive={true} />
       )}
-
-      {/* Top Mesoamerican Greca border */}
-      <GrecaBar />
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col">
-        {/* Header: visible ONLY on Feed tab and when not in a game session */}
-        {user && activeTab === 'feed' && !activeGameType && !isArcadePlaying && (
+        {/* Header: visible across all main tabs (Feed, Sendero, Arcade, Codex) */}
+        {user && !activeGameType && !isArcadePlaying && (
           <Header
             user={user}
             progress={progress}
@@ -278,18 +277,19 @@ export const App: React.FC = () => {
               setActiveTab('feed');
               setPlayingNode(null);
               setActiveGameType(null);
+              setIsArcadePlaying(false);
             }}
           />
         )}
 
         {/* Depleted Energy Banner Toast */}
         {energyAlert && (
-          <div className="w-full max-w-[390px] mx-auto px-2 pt-2 animate-in slide-in-from-top-2 duration-200">
-            <div className="bg-[#a62b2b] text-[#ffdad7] font-press-start text-[8.5px]/[13px] p-2.5 rounded-[2px] border-2 border-[#ffb3ad] [box-shadow:inset_1px_1px_0px_#ffffff33,_0px_4px_10px_rgba(0,0,0,0.8)] flex items-center justify-between">
+          <div className="w-full max-w-[440px] mx-auto px-2.5 pt-2 animate-in slide-in-from-top-2 duration-200">
+            <div className="bg-[#9E2A2B] text-[#FFFDF2] font-press-start text-[8.5px]/[13px] p-2.5 rounded-[2px] border-2 border-[#FFFDF2]/40 [box-shadow:inset_1px_1px_0px_#ffffff33,_0px_4px_10px_rgba(0,0,0,0.8)] flex items-center justify-between">
               <span>{energyAlert}</span>
               <button
                 onClick={() => setEnergyAlert(null)}
-                className="ml-2 text-[#ffdeac] font-bold text-xs hover:text-white"
+                className="ml-2 text-[#FFFDF2] font-bold text-xs hover:text-[#2A7B4C]"
               >
                 ✕
               </button>
@@ -312,10 +312,19 @@ export const App: React.FC = () => {
                   setActiveGameType(null);
                   setTimeout(() => setActiveGameType(currentType), 50);
                 }}
-                gameTitle={playingNode?.title || (activeGameType === 'tetris' ? 'TETRIS AZTECA' : 'MÁSCARAS GEMELAS')}
+                gameTitle={
+                  playingNode?.title ||
+                  (activeGameType === 'tetris'
+                    ? 'TETRIS AZTECA'
+                    : activeGameType === 'memorama'
+                    ? 'MÁSCARAS GEMELAS'
+                    : activeGameType === 'balanza'
+                    ? 'BALANZA SAGRADA'
+                    : 'ORBES DE KUKULCÁN')
+                }
                 language={settings.language}
               />
-              {activeGameType === 'tetris' ? (
+              {activeGameType === 'tetris' && (
                 <MayaTetris
                   node={playingNode}
                   onClose={() => {
@@ -325,7 +334,8 @@ export const App: React.FC = () => {
                   }}
                   onVictory={handleNodeVictory}
                 />
-              ) : (
+              )}
+              {activeGameType === 'memorama' && (
                 <MayaMemorama
                   node={playingNode}
                   onClose={() => {
@@ -334,6 +344,26 @@ export const App: React.FC = () => {
                     loadAppData();
                   }}
                   onVictory={handleNodeVictory}
+                />
+              )}
+              {activeGameType === 'balanza' && (
+                <BalanzaSagrada
+                  onClose={() => {
+                    setPlayingNode(null);
+                    setActiveGameType(null);
+                    loadAppData();
+                  }}
+                  onReward={(coins) => handleNodeVictory(3, coins || 50)}
+                />
+              )}
+              {activeGameType === 'kukulcan' && (
+                <KukulcanOrbs
+                  onClose={() => {
+                    setPlayingNode(null);
+                    setActiveGameType(null);
+                    loadAppData();
+                  }}
+                  onReward={(coins) => handleNodeVictory(3, coins || 60)}
                 />
               )}
             </div>
